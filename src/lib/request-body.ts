@@ -29,7 +29,11 @@ export async function bufferRequestBody(request: Request, maxBytes: number) {
       if (done) break;
       total += value.byteLength;
       if (total > maxBytes) {
-        await reader.cancel();
+        try {
+          await reader.cancel();
+        } catch {
+          // Preserve the size-limit error even when the request stream cannot be cancelled cleanly.
+        }
         throw new RequestBodyTooLargeError();
       }
       chunks.push(value);

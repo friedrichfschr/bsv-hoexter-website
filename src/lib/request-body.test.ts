@@ -43,6 +43,24 @@ describe("bufferRequestBody", () => {
     await expect(bufferRequestBody(request, 10)).rejects.toBeInstanceOf(RequestBodyTooLargeError);
   });
 
+  it("preserves the size error when cancelling an oversized stream fails", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(10));
+      },
+      cancel() {
+        return Promise.reject(new Error("Test cancellation failure"));
+      },
+    });
+    const request = new Request("https://example.test/api", {
+      method: "POST",
+      body: stream,
+      duplex: "half",
+    } as RequestInit & { duplex: "half" });
+
+    await expect(bufferRequestBody(request, 8)).rejects.toBeInstanceOf(RequestBodyTooLargeError);
+  });
+
   it("preserves multipart metadata for subsequent form parsing", async () => {
     const form = new FormData();
     form.set("title", "Test event");
