@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.env*
+!.env.example
+.preview-submissions/
+.editorial-content/
+.test-editorial-content/
+.hermes/
+.DS_Store
+*.log
+*.tsbuildinfo
