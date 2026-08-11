@@ -1,8 +1,8 @@
 # BSV Höxter Website
 
-Minimal Next.js foundation for the BSV Höxter website.
+Small, expandable Next.js website foundation for the BSV Höxter. The public site currently contains the shared logo/navigation/footer, the visual notice-board foundation, and a simple editorial news section backed by published records only. No production article content is seeded.
 
-The public render intentionally contains one heading and the retained footer. Architecture, styling rules, file ownership, backend boundaries, and the feature-by-feature continuation workflow are documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
+Architecture, styling tokens, file ownership, backend boundaries, editorial workflow, and the feature-by-feature continuation process are documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Development
 
@@ -10,6 +10,8 @@ The public render intentionally contains one heading and the retained footer. Ar
 npm install
 npm run dev
 ```
+
+Set `EDITORIAL_API_KEY` and optionally `EDITORIAL_CONTENT_DIRECTORY` from `.env.example` to use the protected `/redaktion` workspace. The local workspace supports article drafts, publishing, and optional validated image uploads. Do not expose or commit the key.
 
 ## Quality gate
 
@@ -21,4 +23,4 @@ npm run build
 npm run test:e2e
 ```
 
-Copy `.env.example` into your deployment environment and never commit real secrets or submitted content.
+Copy `.env.example` into your deployment environment and never commit real secrets, editorial data, or uploaded media.

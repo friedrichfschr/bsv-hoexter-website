@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { validateSubmission } from "@/lib/submission";
+import { submissionIncludesEvent, submissionRequiresPoster, validateSubmission } from "@/lib/submission";
 
 const valid = {
+  submissionKind: "event",
   title: "Test event",
   organizer: "Beispielorganisation",
   category: "Freizeit",
-  sourceUrl: "https://example.org/termin",
-  flyerUrl: "https://example.org/flyer.pdf",
+  website: "https://example.org/termin",
   date: "2026-11-08",
   location: "Höxter",
   ageRange: "14 bis 18 Jahre",
@@ -17,16 +17,36 @@ const valid = {
 };
 
 describe("validateSubmission", () => {
-  it("accepts and normalizes a complete submission", () => {
+  it("accepts and normalizes an event-only submission", () => {
     const result = validateSubmission({ ...valid, title: "  Test event  " });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.title).toBe("Test event");
   });
 
-  it("rejects invalid or non-HTTP source links", () => {
-    expect(validateSubmission({ ...valid, sourceUrl: "not-a-url" }).success).toBe(false);
-    expect(validateSubmission({ ...valid, sourceUrl: "javascript:alert(1)" }).success).toBe(false);
-    expect(validateSubmission({ ...valid, sourceUrl: "file:///etc/passwd" }).success).toBe(false);
+  it("accepts poster-only submissions without event fields", () => {
+    const result = validateSubmission({
+      submissionKind: "poster",
+      title: "Test poster",
+      contactEmail: "test@example.org",
+      consent: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts combined poster and event submissions", () => {
+    expect(validateSubmission({ ...valid, submissionKind: "both" }).success).toBe(true);
+  });
+
+  it("requires every event field for event and combined submissions", () => {
+    for (const field of ["description", "date", "location", "ageRange", "website", "organizer", "category"] as const) {
+      expect(validateSubmission({ ...valid, [field]: "" }).success, field).toBe(false);
+    }
+  });
+
+  it("rejects invalid or non-HTTP website links", () => {
+    expect(validateSubmission({ ...valid, website: "not-a-url" }).success).toBe(false);
+    expect(validateSubmission({ ...valid, website: "javascript:alert(1)" }).success).toBe(false);
+    expect(validateSubmission({ ...valid, website: "file:///etc/passwd" }).success).toBe(false);
   });
 
   it("requires the accuracy and contact consent", () => {
@@ -45,7 +65,16 @@ describe("validateSubmission", () => {
   });
 
   it("accepts only the moderated board categories", () => {
-    expect(validateSubmission({ ...valid, category: "Hobbies" }).success).toBe(true);
+    expect(validateSubmission({ ...valid, category: "Hobbys" }).success).toBe(true);
     expect(validateSubmission({ ...valid, category: "Politik" }).success).toBe(false);
+  });
+
+  it("identifies which submission modes require event data or a poster", () => {
+    expect(submissionRequiresPoster("poster")).toBe(true);
+    expect(submissionRequiresPoster("event")).toBe(false);
+    expect(submissionRequiresPoster("both")).toBe(true);
+    expect(submissionIncludesEvent("poster")).toBe(false);
+    expect(submissionIncludesEvent("event")).toBe(true);
+    expect(submissionIncludesEvent("both")).toBe(true);
   });
 });

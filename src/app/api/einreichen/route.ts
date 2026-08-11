@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { validateSubmission } from "@/lib/submission";
+import { submissionRequiresPoster, validateSubmission } from "@/lib/submission";
 import { appendPreviewRecord } from "@/lib/preview-store";
 import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
 import path from "node:path";
@@ -17,12 +17,12 @@ export async function POST(request: Request) {
   try {
     const boundedRequest = await bufferRequestBody(request, contentType.startsWith("multipart/form-data") ? 5_100_000 : 20_000);
     let body: unknown;
-    let flyerFile: File | undefined;
+    let posterFile: File | undefined;
     if (contentType.startsWith("multipart/form-data")) {
       const form = await boundedRequest.formData();
-      const candidate = form.get("flyerFile");
-      flyerFile = candidate instanceof File && candidate.size > 0 ? candidate : undefined;
-      body = Object.fromEntries([...form.entries()].filter(([key]) => key !== "flyerFile"));
+      const candidate = form.get("posterFile");
+      posterFile = candidate instanceof File && candidate.size > 0 ? candidate : undefined;
+      body = Object.fromEntries([...form.entries()].filter(([key]) => key !== "posterFile"));
       (body as Record<string, unknown>).consent = form.get("consent") === "true";
     } else {
       body = await boundedRequest.json();
@@ -33,16 +33,19 @@ export async function POST(request: Request) {
       const issue = parsed.error.issues[0];
       return NextResponse.json({ error: issue?.message ?? "Bitte die Angaben prüfen.", field: issue?.path[0] }, { status: 400 });
     }
+    if (submissionRequiresPoster(parsed.data.submissionKind) && !posterFile) {
+      return NextResponse.json({ error: "Bitte eine Posterdatei auswählen.", field: "posterFile" }, { status: 400 });
+    }
     const directory = resolvePreviewDirectory(process.env);
-    let flyerUpload;
-    if (flyerFile) {
+    let posterUpload;
+    if (posterFile && submissionRequiresPoster(parsed.data.submissionKind)) {
       try {
-        flyerUpload = await storeUpload(path.join(directory, "board-uploads"), flyerFile);
+        posterUpload = await storeUpload(path.join(directory, "board-uploads"), posterFile);
       } catch (error) {
-        return NextResponse.json({ error: error instanceof Error ? error.message : "Der Flyer konnte nicht gespeichert werden.", field: "flyerFile" }, { status: 400 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Das Poster konnte nicht gespeichert werden.", field: "posterFile" }, { status: 400 });
       }
     }
-    const record = await appendPreviewRecord(directory, "events", { ...parsed.data, flyerUpload });
+    const record = await appendPreviewRecord(directory, "board-submissions", { ...parsed.data, posterUpload });
     return NextResponse.json({ id: record.id }, { status: 202 });
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {

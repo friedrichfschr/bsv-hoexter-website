@@ -1,4 +1,5 @@
-export const eventCategories = ["Alle", "Freizeit", "Berufsorientierung", "Hobbies"] as const;
+export const eventSubmissionCategories = ["Freizeit", "Berufsorientierung", "Hobbys"] as const;
+export const eventCategories = ["Alle", ...eventSubmissionCategories] as const;
 
 export type EventCategory = Exclude<(typeof eventCategories)[number], "Alle">;
 

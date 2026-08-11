@@ -16,6 +16,7 @@ export const articleSchema = z.object({
   publishedAt: isoDate,
   status,
   imageId: z.string().trim().max(100).default(""),
+  imageAlt: z.string().trim().max(240).optional(),
 });
 
 export const documentSchema = z.object({
@@ -33,6 +34,7 @@ export const editorialContentSchema = z.object({
   documents: z.array(documentSchema).max(500),
 });
 
+export type Article = z.infer<typeof articleSchema>;
 export type EditorialContent = z.infer<typeof editorialContentSchema>;
 export const emptyEditorialContent: EditorialContent = { articles: [], documents: [] };
 const writeQueues = new Map<string, Promise<void>>();
@@ -71,6 +73,10 @@ export async function writeEditorialContent(directory: string, input: unknown): 
 
 export function publishedArticles(content: EditorialContent) {
   return content.articles.filter((article) => article.status === "published").sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
+export function publishedArticleBySlug(content: EditorialContent, slug: string) {
+  return publishedArticles(content).find((article) => article.slug === slug);
 }
 
 export function publishedDocuments(content: EditorialContent, kind?: EditorialContent["documents"][number]["kind"]) {

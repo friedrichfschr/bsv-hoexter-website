@@ -33,16 +33,29 @@ Use Node.js 22 LTS or newer. Commands are defined in `package.json`.
 src/
 ├── app/                         Next.js routes and global composition
 │   ├── api/                     Server-only HTTP boundaries
-│   ├── foundation.css           Tailwind theme, tokens, reset, shell, footer
-│   ├── layout.tsx               Fonts, metadata, main landmark, footer
-│   └── page.tsx                 Current minimal public surface
+│   ├── foundation.css           Tailwind theme, tokens, reset, shell, sections
+│   ├── aktuelles/page.tsx       Published article index
+│   ├── aktuelles/[slug]/        Published article detail route
+│   ├── mitmachen/page.tsx       Heading-only participation placeholder
+│   ├── schwarzes-brett/page.tsx Visual notice-board foundation
+│   ├── schwarzes-brett/einreichen/ Poster/event submission route
+│   ├── ueber-uns/page.tsx       Heading-only about placeholder
+│   ├── layout.tsx               Fonts, metadata, shared header/main/footer
+│   └── page.tsx                 Minimal homepage
 ├── components/
-│   └── Footer.tsx               Only retained public component
+│   ├── Footer.tsx               Shared public footer
+│   └── layout/
+│       └── SiteHeader.tsx       Responsive logo/navigation client boundary
+├── features/
+│   ├── news/                    Public news and editorial workspace components
+│   └── notice-board/            Poster/event submission form
 ├── domain/
-│   └── events.ts                Empty event collection, types, pure selectors
+│   ├── events.ts                Empty event collection, types, pure selectors
+│   └── notice-board.ts          Board and poster placement records
 └── lib/
     ├── calendar.ts              Calendar serialization
     ├── contact.ts               Contact validation
+    ├── articles.ts              Article create/update service boundary
     ├── editorial.ts             Editorial schemas and repository adapter
     ├── editorial-auth.ts        Editorial API authentication boundary
     ├── preview-config.ts        Local form/storage feature flags
@@ -52,6 +65,24 @@ src/
     ├── submission.ts            Opportunity submission validation
     └── uploads.ts               File size, MIME, signature, and storage checks
 ```
+
+The Schwarzes-Brett route currently has one deliberately visual exception to the
+heading-only placeholder rule: it renders the section heading, two decorative
+copies of `public/bulletin-board-transparent.png`, and the four supplied poster
+placeholders. The transparent board image is the canvas; poster records from
+`src/domain/notice-board.ts` define each image's percentage position, size, and
+rotation. The model records a total design capacity of roughly 10–15 posters
+across both boards. A future editor can replace those records without changing
+the page rendering layer. Poster wrappers remain transparent and images use
+`object-fit: contain` so source artwork is not stretched or given an artificial
+white backing.
+
+`/schwarzes-brett/einreichen` accepts poster-only, event-only, or combined
+submissions. Every submission requires a title, contact email, and consent.
+Event submissions additionally require description, date, location, age range,
+website, organizer, and one of `Freizeit`, `Berufsorientierung`, or `Hobbys`.
+Poster files remain private pending moderation and use the existing 5 MB upload
+validation boundary. Preview records are appended to `board-submissions.jsonl`.
 
 Top-level operational files:
 
@@ -70,14 +101,14 @@ Top-level operational files:
 
 All global visual decisions live in `src/app/foundation.css`.
 
-The `:root` block is the source of truth for semantic CSS variables:
+The `:root` block is the source of truth for semantic CSS variables, grouped by purpose:
 
-- `--color-ink`, `--color-ink-soft`, `--color-muted`
-- `--color-paper`, `--color-surface`, `--color-warm`
-- `--color-gold`, `--color-board`, `--color-border`, `--color-danger`
-- `--layout-shell`
-- `--space-section`
-- `--shadow-soft`
+- Core palette: `--color-ink`, `--color-paper`, `--color-surface`, `--color-warm`, `--color-gold`, `--color-gold-text`, `--color-border`, and related semantic colors.
+- Component surfaces: `--color-header`, `--color-footer`, `--color-on-dark`, and footer text/border variants.
+- Notice-board accents: `--color-board-stage-edge` and `--color-board-pin`.
+- Shape and elevation: `--radius-control`, `--border-width-control`, `--shadow-control`, and `--shadow-soft`.
+- Interaction: `--color-focus`, `--color-selection`, `--focus-width`, `--focus-offset`, and `--motion-fast`.
+- Layout: `--layout-shell` and `--space-section`.
 
 The Tailwind `@theme inline` block maps those semantic variables to utilities:
 
@@ -86,7 +117,7 @@ The Tailwind `@theme inline` block maps those semantic variables to utilities:
 - `font-body`, `font-display`
 - `rounded-bsv`, `shadow-bsv`
 
-Change brand values in `:root`; do not scatter replacement hex values across components.
+Change brand values in `:root`; do not scatter replacement hex values, radii, border widths, or shadows across components. For example, changing `--radius-control` updates both desktop navigation links and the phone menu button, while changing palette variables updates shared surfaces everywhere.
 
 ### 4.2 Typography
 
@@ -139,10 +170,20 @@ Examples for future work:
 
 Do not encode page names into reusable classes. Do not use generated-looking class names, numbered visual variants without meaning, or inline style objects for normal layout.
 
+The current notice-board presentation uses `.bulletin-board-page`,
+`.bulletin-board-heading`, `.bulletin-board-display`, `.bulletin-board-card`,
+`.bulletin-board-canvas`, `.bulletin-board-image`, `.bulletin-board-poster`, and
+`.bulletin-board-pin`. Poster placement is data-driven through
+`src/domain/notice-board.ts`; CSS custom properties carry those values to the
+rendered layer. Its palette, radius, and shadow remain centralized in the
+`:root` tokens above so the visual direction can be changed without editing the
+route component.
+
 ### 4.5 Component rules
 
 - Server Components are the default.
 - Add `"use client"` only at the smallest interactive boundary.
+- `SiteHeader.tsx` is the current client boundary because it owns the phone menu toggle, Escape-key handling, focus restoration, and active-route state. Route pages and the root layout remain Server Components.
 - Components receive typed content through props; they do not import factual datasets directly.
 - A route assembles components; it should not contain a large block of repeated markup.
 - Every icon-only action needs an accessible name.
@@ -170,6 +211,20 @@ Future factual records must include provenance and publication state. Event reco
 Local writes use unique temporary files, per-process serialization, and atomic replacement, so concurrent requests cannot collide on temporary or destination files. They still use last-write-wins semantics across processes; production editing requires optimistic version checks to prevent one editor from overwriting another editor's changes.
 
 Public routes should call selectors such as `publishedArticles()` and `publishedDocuments()` rather than filtering status ad hoc.
+
+### 5.2.1 News article slice
+
+`src/lib/articles.ts` is the article mutation boundary. It creates and updates one article while preserving documents, rejects duplicate slugs, validates optional media references, and requires image alternative text before an article with an image can be published.
+
+The public news feature is intentionally small:
+
+- `/aktuelles` renders the newest published article as a lead item and the remaining published articles as a chronological list.
+- `/aktuelles/[slug]` renders only a published article and returns 404 for drafts or unknown slugs.
+- Article bodies are plain text separated into paragraphs; raw HTML and rich-text execution are not supported.
+- Empty editorial storage produces a quiet empty state and no seeded article.
+- `src/features/news/EditorialDashboard.tsx` provides the first admin utility for creating drafts, publishing articles, and uploading optional images.
+
+The dashboard calls `/api/redaktion/articles`, `/api/redaktion/upload`, and `/api/redaktion/session`. The browser receives only an HTTP-only signed session cookie; it never receives `EDITORIAL_API_KEY`.
 
 ### 5.3 API routes
 
@@ -200,17 +255,19 @@ Before production, add malware scanning, object storage, retention/deletion jobs
 
 ### 5.5 Authentication
 
-The current editorial API uses `EDITORIAL_API_KEY` as a development boundary. It is not the final editor identity system. Production should use individual accounts, least-privilege roles, revocation, session expiry, and an audit trail. Never place an editorial secret in a `NEXT_PUBLIC_*` variable.
+The current editorial workspace uses `EDITORIAL_API_KEY` as a development login secret. Successful login creates an eight-hour, HTTP-only, SameSite session cookie signed with HMAC. Protected editorial routes accept either the existing Bearer header for automation or that cookie for `/redaktion`.
 
-## 6. Planned route map
+This is not the final editor identity system. Production should use individual accounts, least-privilege roles, revocation, session expiry, CSRF protection, rate limiting, and an audit trail. Never place an editorial secret in a `NEXT_PUBLIC_*` variable or browser storage.
 
-Only `/` is implemented as public content now. Add routes in this order only when their complete vertical slice is ready:
+## 6. Route map
+
+Three primary navigation destinations remain heading-only placeholders. News and the board submission flow are implemented vertical slices. Expand remaining placeholders only when their complete vertical slice is ready:
 
 | Route | Responsibility |
 | --- | --- |
 | `/schwarzes-brett` | Moderated board, filters, current opportunities |
 | `/schwarzes-brett/[slug]` | Opportunity detail and source trust treatment |
-| `/schwarzes-brett/einreichen` | Structured submission and private upload |
+| `/schwarzes-brett/einreichen` | Implemented poster-only, event-only, or combined submission and private upload |
 | `/aktuelles` | Reverse-chronological published articles |
 | `/aktuelles/[slug]` | Individual article |
 | `/bdk` | Process, current status, protocols |
@@ -220,7 +277,7 @@ Only `/` is implemented as public content now. Add routes in this order only whe
 | `/impressum` | Approved legal notice |
 | `/datenschutz` | Approved privacy information |
 | `/barrierefreiheit` | Accessibility statement and feedback route |
-| `/redaktion` | Authenticated editorial workspace |
+| `/redaktion` | Password-gated editorial workspace for article drafts, publishing, and image uploads |
 
 Do not add a route merely to display placeholder prose. Until content and process are approved, leave it unimplemented.
 
@@ -248,8 +305,6 @@ A feature is not complete if it only has UI, only has an API, or only has placeh
 Create these only as their feature is implemented:
 
 ```text
-src/components/layout/SiteHeader.tsx
-src/components/layout/MobileNavigation.tsx
 src/components/layout/PageHeader.tsx
 src/components/ui/Button.tsx
 src/components/ui/Notice.tsx
@@ -258,7 +313,9 @@ src/components/forms/FormField.tsx
 src/features/board/NoticeBoard.tsx
 src/features/board/OpportunityRow.tsx
 src/features/board/OpportunityFilters.tsx
-src/features/news/ArticleList.tsx
+src/features/news/ArticleIndex.tsx
+src/features/news/ArticleDetail.tsx
+src/features/news/EditorialDashboard.tsx
 src/features/documents/DocumentList.tsx
 ```
 
@@ -296,9 +353,13 @@ Copy names exactly from `.env.example`. Secret values belong in deployment confi
 
 The current public render deliberately consists of:
 
-- one `<h1>` in `src/app/page.tsx`;
+- the logo and four primary navigation links in `src/components/layout/SiteHeader.tsx`;
+- a compact phone header whose labeled menu button exposes one full-width link column, reports its state with `aria-expanded`, and closes with Escape or route selection;
+- one simple `<h1>` on the foundation routes, plus the implemented news index/detail content sourced only from editorial storage;
 - the shared footer in `src/components/Footer.tsx`;
 - global fonts, metadata, and landmarks in `src/app/layout.tsx`;
 - the token system and responsive footer in `src/app/foundation.css`.
+
+The current editorial utility at `/redaktion` is intentionally small: login, article list, draft/publish editor, optional image upload, and logout. It is a development scaffold, not a multi-user CMS.
 
 This is the baseline. Add no generic marketing sections, invented examples, fake statistics, stock imagery, gradients, or placeholder articles to make future pages look complete.

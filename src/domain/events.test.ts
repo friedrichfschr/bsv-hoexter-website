@@ -7,7 +7,7 @@ function fixture(overrides: Partial<BsvEvent> = {}): BsvEvent {
     title: "Test event",
     summary: "A test-only summary.",
     description: ["Test-only description."],
-    category: "Hobbies",
+    category: "Hobbys",
     start: "2099-01-10T10:00:00",
     end: "2099-01-10T11:00:00",
     dateLabel: "10 January 2099",
@@ -27,7 +27,7 @@ function fixture(overrides: Partial<BsvEvent> = {}): BsvEvent {
 describe("filterEvents", () => {
   it("filters constructed records by query, category, and location", () => {
     const records = [fixture(), fixture({ slug: "other", title: "Other", category: "Freizeit", city: "Elsewhere" })];
-    expect(filterEvents(records, { query: "test event", category: "Hobbies", location: "Test city" }).map((event) => event.slug)).toEqual(["test-event"]);
+    expect(filterEvents(records, { query: "test event", category: "Hobbys", location: "Test city" }).map((event) => event.slug)).toEqual(["test-event"]);
   });
 
   it("sorts current records chronologically and excludes expired records", () => {

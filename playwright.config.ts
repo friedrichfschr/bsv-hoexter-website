@@ -1,8 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const testServerCommand = process.platform === "win32"
+  ? 'if exist ".test-editorial-content" rmdir /s /q ".test-editorial-content" & set "EDITORIAL_API_KEY=e2e-editorial-key" && set "EDITORIAL_CONTENT_DIRECTORY=.test-editorial-content" && npm run dev -- --hostname 127.0.0.1'
+  : "rm -rf .test-editorial-content && EDITORIAL_API_KEY=e2e-editorial-key EDITORIAL_CONTENT_DIRECTORY=.test-editorial-content npm run dev -- --hostname 127.0.0.1";
+
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   reporter: "list",
   use: {
     baseURL: "http://127.0.0.1:3000",
@@ -14,9 +19,9 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1",
+    command: testServerCommand,
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

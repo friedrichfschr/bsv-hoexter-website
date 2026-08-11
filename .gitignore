@@ -9,6 +9,7 @@ test-results/
 .preview-submissions/
 .editorial-content/
 .test-editorial-content/
+.visual-editorial-content/
 .hermes/
 .DS_Store
 *.log

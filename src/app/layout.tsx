@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Newsreader, Source_Sans_3 } from "next/font/google";
 import { Footer } from "@/components/Footer";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 import { siteUrl } from "@/lib/site";
 import "./foundation.css";
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="de" className={`${sourceSans.variable} ${newsreader.variable}`}>
       <body>
+        <SiteHeader />
         <main id="main-content">{children}</main>
         <Footer />
       </body>

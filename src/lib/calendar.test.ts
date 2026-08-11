@@ -7,7 +7,7 @@ const fixture: BsvEvent = {
   title: "Test event",
   summary: "A test-only summary.",
   description: ["Test-only description."],
-  category: "Hobbies",
+  category: "Hobbys",
   start: "2099-01-10T10:00:00",
   end: "2099-01-10T11:00:00",
   dateLabel: "10 January 2099",
