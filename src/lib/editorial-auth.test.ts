@@ -43,7 +43,8 @@ describe("editorial API authorization", () => {
     const otherInvalidRequest = new Request("http://localhost", { headers: { authorization: "Bearer falsch", "x-forwarded-for": "192.0.2.11" } });
     const validRequest = new Request("http://localhost", { headers: { authorization: "Bearer redaktions-passwort", "x-forwarded-for": "192.0.2.11" } });
 
-    clearEditorialLoginFailures();
+    clearEditorialLoginFailures("proxy:192.0.2.10");
+    clearEditorialLoginFailures("proxy:192.0.2.11");
     expect(isEditorialLoginAllowed("proxy:192.0.2.10", now)).toBe(true);
     for (let attempt = 0; attempt < 5; attempt += 1) {
       expect(authorizeEditorialRequest(invalidRequest, environment, now)).toBe("unauthorized");
@@ -55,6 +56,7 @@ describe("editorial API authorization", () => {
     expect(isEditorialRequestAuthorized(validRequest, environment, now)).toBe(true);
     expect(isEditorialLoginAllowed("proxy:192.0.2.11", now)).toBe(true);
     expect(isEditorialLoginAllowed("proxy:192.0.2.10", now)).toBe(false);
-    clearEditorialLoginFailures();
+    clearEditorialLoginFailures("proxy:192.0.2.10");
+    clearEditorialLoginFailures("proxy:192.0.2.11");
   });
 });
