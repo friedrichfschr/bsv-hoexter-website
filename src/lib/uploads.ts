@@ -54,13 +54,14 @@ export async function readStoredUpload(directory: string, id: string) {
   if (!/^[0-9a-f-]{36}$/.test(id)) return undefined;
   try {
     const parsed = JSON.parse(await readFile(path.join(/* turbopackIgnore: true */ directory, `${id}.json`), "utf8")) as Partial<StoredUpload>;
-    const kind = supported[parsed.mediaType as keyof typeof supported];
+    if (typeof parsed.mediaType !== "string" || !Object.prototype.hasOwnProperty.call(supported, parsed.mediaType)) return undefined;
+    const mediaType = parsed.mediaType as keyof typeof supported;
+    const kind = supported[mediaType];
     if (
       parsed.id !== id
       || typeof parsed.originalName !== "string"
       || parsed.storedName !== `${id}.${kind?.extension ?? ""}`
       || parsed.extension !== kind?.extension
-      || typeof parsed.mediaType !== "string"
       || typeof parsed.size !== "number"
       || !Number.isSafeInteger(parsed.size)
       || parsed.size < 0

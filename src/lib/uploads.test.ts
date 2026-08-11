@@ -44,5 +44,15 @@ describe("validated uploads", () => {
     }));
 
     await expect(readStoredUpload(directory, id)).resolves.toBeUndefined();
+
+    await writeFile(path.join(directory, `${id}.json`), JSON.stringify({
+      id,
+      originalName: "image.png",
+      storedName: `${id}.`,
+      mediaType: "__proto__",
+      extension: "",
+      size: pngBytes.length,
+    }));
+    await expect(readStoredUpload(directory, id)).resolves.toBeUndefined();
   });
 });

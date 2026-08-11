@@ -37,14 +37,18 @@ describe("editorial API authorization", () => {
   });
 
   it("limits repeated login failures and clears the limit after a successful login", () => {
-    const client = "test-login-limiter";
     const now = 1_700_000_000_000;
+    const environment = { EDITORIAL_API_KEY: "redaktions-passwort" };
+    const invalidRequest = new Request("http://localhost", { headers: { authorization: "Bearer falsch" } });
+    const validRequest = new Request("http://localhost", { headers: { authorization: "Bearer redaktions-passwort" } });
 
-    expect(isEditorialLoginAllowed(client, now)).toBe(true);
-    for (let attempt = 0; attempt < 5; attempt += 1) recordEditorialLoginFailure(client, now);
-    expect(isEditorialLoginAllowed(client, now)).toBe(false);
+    clearEditorialLoginFailures();
+    expect(isEditorialLoginAllowed(now)).toBe(true);
+    for (let attempt = 0; attempt < 5; attempt += 1) recordEditorialLoginFailure(now);
+    expect(isEditorialLoginAllowed(now)).toBe(false);
+    expect(isEditorialRequestAuthorized(invalidRequest, environment)).toBe(false);
 
-    clearEditorialLoginFailures(client);
-    expect(isEditorialLoginAllowed(client, now)).toBe(true);
+    expect(isEditorialRequestAuthorized(validRequest, environment)).toBe(true);
+    expect(isEditorialLoginAllowed(now)).toBe(true);
   });
 });
