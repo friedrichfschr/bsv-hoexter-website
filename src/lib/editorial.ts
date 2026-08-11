@@ -5,7 +5,20 @@ import { z } from "zod";
 
 const status = z.enum(["draft", "published"]);
 const identifier = z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/);
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+function isValidIsoDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= daysInMonth[month - 1];
+}
+
+const isoDate = z.string().refine(isValidIsoDate, "Bitte ein gültiges Datum angeben.");
 
 export const articleSchema = z.object({
   id: identifier,
@@ -39,6 +52,27 @@ export type EditorialContent = z.infer<typeof editorialContentSchema>;
 export const emptyEditorialContent: EditorialContent = { articles: [], documents: [] };
 const writeQueues = new Map<string, Promise<void>>();
 
+async function enqueueEditorialWrite<T>(directory: string, operation: () => Promise<T>) {
+  const previous = writeQueues.get(directory) ?? Promise.resolve();
+  let release!: () => void;
+  const current = new Promise<void>((resolve) => { release = resolve; });
+  writeQueues.set(directory, current);
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+    if (writeQueues.get(directory) === current) writeQueues.delete(directory);
+  }
+}
+
+async function writeEditorialFile(directory: string, content: EditorialContent) {
+  await mkdir(directory, { recursive: true });
+  const temporary = path.join(directory, `content.${process.pid}.${randomUUID()}.tmp`);
+  await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  await rename(temporary, path.join(directory, "content.json"));
+}
+
 export function resolveEditorialDirectory(environment: NodeJS.ProcessEnv = process.env) {
   return path.resolve(/* turbopackIgnore: true */ environment.EDITORIAL_CONTENT_DIRECTORY || ".editorial-content");
 }
@@ -55,20 +89,23 @@ export async function readEditorialContent(directory = resolveEditorialDirectory
 
 export async function writeEditorialContent(directory: string, input: unknown): Promise<EditorialContent> {
   const content = editorialContentSchema.parse(input);
-  const previous = writeQueues.get(directory) ?? Promise.resolve();
-  const operation = previous.catch(() => undefined).then(async () => {
-    await mkdir(directory, { recursive: true });
-    const temporary = path.join(directory, `content.${process.pid}.${randomUUID()}.tmp`);
-    await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-    await rename(temporary, path.join(directory, "content.json"));
-  });
-  writeQueues.set(directory, operation);
-  try {
-    await operation;
+  return enqueueEditorialWrite(directory, async () => {
+    await writeEditorialFile(directory, content);
     return content;
-  } finally {
-    if (writeQueues.get(directory) === operation) writeQueues.delete(directory);
-  }
+  });
+}
+
+export async function mutateEditorialContent<T>(
+  directory: string,
+  mutation: (content: EditorialContent) => Promise<{ content: unknown; result: T }> | { content: unknown; result: T },
+) {
+  return enqueueEditorialWrite(directory, async () => {
+    const current = await readEditorialContent(directory);
+    const changed = await mutation(current);
+    const content = editorialContentSchema.parse(changed.content);
+    await writeEditorialFile(directory, content);
+    return changed.result;
+  });
 }
 
 export function publishedArticles(content: EditorialContent) {

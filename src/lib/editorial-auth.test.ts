@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { createEditorialSessionToken, isEditorialRequestAuthorized, isEditorialSessionAuthorized } from "@/lib/editorial-auth";
+import {
+  clearEditorialLoginFailures,
+  createEditorialSessionToken,
+  isEditorialLoginAllowed,
+  isEditorialRequestAuthorized,
+  isEditorialSessionAuthorized,
+  recordEditorialLoginFailure,
+} from "@/lib/editorial-auth";
 
 describe("editorial API authorization", () => {
   it("uses a configured bearer secret and rejects missing configuration", () => {
@@ -27,5 +34,17 @@ describe("editorial API authorization", () => {
 
     expect(isEditorialSessionAuthorized(expired, environment)).toBe(false);
     expect(isEditorialSessionAuthorized(tampered, environment)).toBe(false);
+  });
+
+  it("limits repeated login failures and clears the limit after a successful login", () => {
+    const client = "test-login-limiter";
+    const now = 1_700_000_000_000;
+
+    expect(isEditorialLoginAllowed(client, now)).toBe(true);
+    for (let attempt = 0; attempt < 5; attempt += 1) recordEditorialLoginFailure(client, now);
+    expect(isEditorialLoginAllowed(client, now)).toBe(false);
+
+    clearEditorialLoginFailures(client);
+    expect(isEditorialLoginAllowed(client, now)).toBe(true);
   });
 });

@@ -3,9 +3,9 @@ import path from "node:path";
 import { z } from "zod";
 import {
   articleSchema,
-  readEditorialContent,
+  editorialContentSchema,
+  mutateEditorialContent,
   resolveEditorialDirectory,
-  writeEditorialContent,
   type Article,
 } from "@/lib/editorial";
 import { readStoredUpload } from "@/lib/uploads";
@@ -34,24 +34,45 @@ function assertUniqueSlug(articles: Article[], article: Article) {
   if (articles.some((item) => item.slug === article.slug && item.id !== article.id)) throw new Error("Slug bereits vergeben.");
 }
 
+function assertUniqueSlugs(articles: Article[]) {
+  const slugs = new Set<string>();
+  for (const article of articles) {
+    if (slugs.has(article.slug)) throw new Error("Slug bereits vergeben.");
+    slugs.add(article.slug);
+  }
+}
+
+async function validateArticles(directory: string, articles: Article[]) {
+  assertUniqueSlugs(articles);
+  for (const article of articles) await validateImage(directory, article);
+}
+
 export async function createArticle(directory = resolveEditorialDirectory(), input: unknown) {
-  const content = await readEditorialContent(directory);
-  const article = normalizeArticle(input, `article-${randomUUID()}`);
-  assertUniqueSlug(content.articles, article);
-  await validateImage(directory, article);
-  await writeEditorialContent(directory, { ...content, articles: [...content.articles, article] });
-  return article;
+  return mutateEditorialContent(directory, async (content) => {
+    const article = normalizeArticle(input, `article-${randomUUID()}`);
+    assertUniqueSlug(content.articles, article);
+    await validateImage(directory, article);
+    return { content: { ...content, articles: [...content.articles, article] }, result: article };
+  });
 }
 
 export async function updateArticle(directory = resolveEditorialDirectory(), id: string, input: unknown) {
-  const content = await readEditorialContent(directory);
-  const existing = content.articles.find((article) => article.id === id);
-  if (!existing) throw new Error("Artikel nicht gefunden.");
-  const article = normalizeArticle(input, id);
-  assertUniqueSlug(content.articles, article);
-  await validateImage(directory, article);
-  await writeEditorialContent(directory, { ...content, articles: content.articles.map((item) => item.id === id ? article : item) });
-  return article;
+  return mutateEditorialContent(directory, async (content) => {
+    const existing = content.articles.find((article) => article.id === id);
+    if (!existing) throw new Error("Artikel nicht gefunden.");
+    const article = normalizeArticle(input, id);
+    assertUniqueSlug(content.articles, article);
+    await validateImage(directory, article);
+    return { content: { ...content, articles: content.articles.map((item) => item.id === id ? article : item) }, result: article };
+  });
+}
+
+export async function replaceEditorialContent(directory = resolveEditorialDirectory(), input: unknown) {
+  return mutateEditorialContent(directory, async () => {
+    const content = editorialContentSchema.parse(input);
+    await validateArticles(directory, content.articles);
+    return { content, result: content };
+  });
 }
 
 export function articleMutationFromRecord(article: Article): ArticleMutation {

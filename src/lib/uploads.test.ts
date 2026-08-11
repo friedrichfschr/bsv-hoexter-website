@@ -1,9 +1,9 @@
 // @vitest-environment node
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { storeUpload, validateUpload } from "@/lib/uploads";
+import { readStoredUpload, storeUpload, validateUpload } from "@/lib/uploads";
 
 const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
@@ -28,5 +28,21 @@ describe("validated uploads", () => {
     expect(saved.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(saved.storedName).toBe(`${saved.id}.png`);
     expect(new Uint8Array(await readFile(path.join(directory, saved.storedName)))).toEqual(pngBytes);
+  });
+
+  it("rejects tampered metadata before using a stored filename", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-upload-metadata-"));
+    const id = "123e4567-e89b-12d3-a456-426614174000";
+    await mkdir(directory, { recursive: true });
+    await writeFile(path.join(directory, `${id}.json`), JSON.stringify({
+      id,
+      originalName: "image.png",
+      storedName: "../outside.png",
+      mediaType: "image/png",
+      extension: "png",
+      size: pngBytes.length,
+    }));
+
+    await expect(readStoredUpload(directory, id)).resolves.toBeUndefined();
   });
 });

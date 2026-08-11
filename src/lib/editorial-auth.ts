@@ -2,6 +2,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const EDITORIAL_SESSION_COOKIE = "bsv_editorial_session";
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 5;
+
+type LoginFailure = { count: number; resetAt: number };
+const loginFailures = new Map<string, LoginFailure>();
 
 type EditorialEnvironment = Record<string, string | undefined>;
 
@@ -23,6 +28,39 @@ export function isEditorialApiKeyValid(supplied: string, environment: EditorialE
   const configured = configuredSecret(environment);
   return Boolean(configured && safeEqual(supplied, configured));
 }
+
+function pruneLoginFailures(now: number) {
+  for (const [client, failure] of loginFailures) {
+    if (failure.resetAt <= now) loginFailures.delete(client);
+  }
+}
+
+export function isEditorialLoginAllowed(client: string, now = Date.now()) {
+  pruneLoginFailures(now);
+  return (loginFailures.get(client)?.count ?? 0) < LOGIN_MAX_FAILURES;
+}
+
+export function recordEditorialLoginFailure(client: string, now = Date.now()) {
+  pruneLoginFailures(now);
+  const current = loginFailures.get(client);
+  if (!current) {
+    loginFailures.set(client, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  current.count += 1;
+}
+
+export function clearEditorialLoginFailures(client: string) {
+  loginFailures.delete(client);
+}
+
+export function editorialLoginClientIdentifier(request: Request) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || "unknown-client";
+}
+
+export const EDITORIAL_LOGIN_RETRY_AFTER_SECONDS = Math.ceil(LOGIN_WINDOW_MS / 1000);
 
 export function createEditorialSessionToken(environment: EditorialEnvironment = process.env, ttlMs = SESSION_TTL_MS, now = Date.now()) {
   const secret = configuredSecret(environment);

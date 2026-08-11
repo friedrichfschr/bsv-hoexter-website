@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 import {
+  clearEditorialLoginFailures,
   createEditorialSessionToken,
+  EDITORIAL_LOGIN_RETRY_AFTER_SECONDS,
   EDITORIAL_SESSION_COOKIE,
+  editorialLoginClientIdentifier,
+  isEditorialLoginAllowed,
   isEditorialApiKeyValid,
+  recordEditorialLoginFailure,
 } from "@/lib/editorial-auth";
 
 export const runtime = "nodejs";
@@ -11,6 +16,13 @@ export const runtime = "nodejs";
 const SESSION_MAX_AGE = 8 * 60 * 60;
 
 export async function POST(request: Request) {
+  const client = editorialLoginClientIdentifier(request);
+  if (!isEditorialLoginAllowed(client)) {
+    return NextResponse.json(
+      { error: "Zu viele fehlgeschlagene Anmeldeversuche. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(EDITORIAL_LOGIN_RETRY_AFTER_SECONDS) } },
+    );
+  }
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
   }
@@ -18,8 +30,10 @@ export async function POST(request: Request) {
     const boundedRequest = await bufferRequestBody(request, 2_000);
     const body = await boundedRequest.json() as { key?: unknown };
     if (typeof body.key !== "string" || !isEditorialApiKeyValid(body.key)) {
+      recordEditorialLoginFailure(client);
       return NextResponse.json({ error: "Anmeldung fehlgeschlagen." }, { status: 401 });
     }
+    clearEditorialLoginFailures(client);
     const response = NextResponse.json({ authenticated: true });
     response.cookies.set({
       name: EDITORIAL_SESSION_COOKIE,

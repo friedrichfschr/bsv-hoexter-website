@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { replaceEditorialContent } from "@/lib/articles";
 import { isEditorialRequestAuthorized } from "@/lib/editorial-auth";
-import { readEditorialContent, resolveEditorialDirectory, writeEditorialContent } from "@/lib/editorial";
+import { readEditorialContent } from "@/lib/editorial";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 
 export const runtime = "nodejs";
@@ -26,7 +27,7 @@ export async function PUT(request: Request) {
   }
   try {
     const boundedRequest = await bufferRequestBody(request, 20_000_000);
-    const content = await writeEditorialContent(resolveEditorialDirectory(), await boundedRequest.json());
+    const content = await replaceEditorialContent(undefined, await boundedRequest.json());
     return NextResponse.json(content);
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
