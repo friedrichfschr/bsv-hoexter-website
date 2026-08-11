@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -34,6 +35,7 @@ export const editorialContentSchema = z.object({
 
 export type EditorialContent = z.infer<typeof editorialContentSchema>;
 export const emptyEditorialContent: EditorialContent = { articles: [], documents: [] };
+const writeQueues = new Map<string, Promise<void>>();
 
 export function resolveEditorialDirectory(environment: NodeJS.ProcessEnv = process.env) {
   return path.resolve(/* turbopackIgnore: true */ environment.EDITORIAL_CONTENT_DIRECTORY || ".editorial-content");
@@ -51,11 +53,20 @@ export async function readEditorialContent(directory = resolveEditorialDirectory
 
 export async function writeEditorialContent(directory: string, input: unknown): Promise<EditorialContent> {
   const content = editorialContentSchema.parse(input);
-  await mkdir(directory, { recursive: true });
-  const temporary = path.join(directory, `content.${process.pid}.tmp`);
-  await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporary, path.join(directory, "content.json"));
-  return content;
+  const previous = writeQueues.get(directory) ?? Promise.resolve();
+  const operation = previous.catch(() => undefined).then(async () => {
+    await mkdir(directory, { recursive: true });
+    const temporary = path.join(directory, `content.${process.pid}.${randomUUID()}.tmp`);
+    await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+    await rename(temporary, path.join(directory, "content.json"));
+  });
+  writeQueues.set(directory, operation);
+  try {
+    await operation;
+    return content;
+  } finally {
+    if (writeQueues.get(directory) === operation) writeQueues.delete(directory);
+  }
 }
 
 export function publishedArticles(content: EditorialContent) {

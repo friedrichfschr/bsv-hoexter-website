@@ -167,6 +167,8 @@ Future factual records must include provenance and publication state. Event reco
 - Local read/write behavior.
 - The seam where a production repository replaces local JSON.
 
+Local writes use unique temporary files, per-process serialization, and atomic replacement, so concurrent requests cannot collide on temporary or destination files. They still use last-write-wins semantics across processes; production editing requires optimistic version checks to prevent one editor from overwriting another editor's changes.
+
 Public routes should call selectors such as `publishedArticles()` and `publishedDocuments()` rather than filtering status ad hoc.
 
 ### 5.3 API routes

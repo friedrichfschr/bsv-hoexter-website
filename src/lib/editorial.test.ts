@@ -43,4 +43,15 @@ describe("editorial content", () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-editorial-empty-"));
     await expect(readEditorialContent(directory)).resolves.toEqual({ articles: [], documents: [] });
   });
+
+  it("keeps concurrent writes isolated from each other's temporary files", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-editorial-concurrent-"));
+    const versions = Array.from({ length: 8 }, (_, index) => ({
+      ...content,
+      articles: [{ ...content.articles[0], title: `Test article ${index}` }],
+    }));
+
+    await expect(Promise.all(versions.map((version) => writeEditorialContent(directory, version)))).resolves.toHaveLength(8);
+    await expect(readEditorialContent(directory)).resolves.toEqual(versions.at(-1));
+  });
 });
