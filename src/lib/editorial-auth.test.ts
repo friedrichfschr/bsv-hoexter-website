@@ -2,11 +2,11 @@
 import { describe, expect, it } from "vitest";
 import {
   clearEditorialLoginFailures,
+  authorizeEditorialRequest,
   createEditorialSessionToken,
   isEditorialLoginAllowed,
   isEditorialRequestAuthorized,
   isEditorialSessionAuthorized,
-  recordEditorialLoginFailure,
 } from "@/lib/editorial-auth";
 
 describe("editorial API authorization", () => {
@@ -38,17 +38,23 @@ describe("editorial API authorization", () => {
 
   it("limits repeated login failures and clears the limit after a successful login", () => {
     const now = 1_700_000_000_000;
-    const environment = { EDITORIAL_API_KEY: "redaktions-passwort" };
-    const invalidRequest = new Request("http://localhost", { headers: { authorization: "Bearer falsch" } });
-    const validRequest = new Request("http://localhost", { headers: { authorization: "Bearer redaktions-passwort" } });
+    const environment = { EDITORIAL_API_KEY: "redaktions-passwort", EDITORIAL_TRUSTED_PROXY: "true" };
+    const invalidRequest = new Request("http://localhost", { headers: { authorization: "Bearer falsch", "x-forwarded-for": "192.0.2.10" } });
+    const otherInvalidRequest = new Request("http://localhost", { headers: { authorization: "Bearer falsch", "x-forwarded-for": "192.0.2.11" } });
+    const validRequest = new Request("http://localhost", { headers: { authorization: "Bearer redaktions-passwort", "x-forwarded-for": "192.0.2.11" } });
 
     clearEditorialLoginFailures();
-    expect(isEditorialLoginAllowed(now)).toBe(true);
-    for (let attempt = 0; attempt < 5; attempt += 1) recordEditorialLoginFailure(now);
-    expect(isEditorialLoginAllowed(now)).toBe(false);
-    expect(isEditorialRequestAuthorized(invalidRequest, environment)).toBe(false);
+    expect(isEditorialLoginAllowed("proxy:192.0.2.10", now)).toBe(true);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      expect(authorizeEditorialRequest(invalidRequest, environment, now)).toBe("unauthorized");
+    }
+    expect(authorizeEditorialRequest(invalidRequest, environment, now)).toBe("rate-limited");
+    expect(authorizeEditorialRequest(otherInvalidRequest, environment, now)).toBe("unauthorized");
 
-    expect(isEditorialRequestAuthorized(validRequest, environment)).toBe(true);
-    expect(isEditorialLoginAllowed(now)).toBe(true);
+    expect(authorizeEditorialRequest(validRequest, environment, now)).toBe("authorized");
+    expect(isEditorialRequestAuthorized(validRequest, environment, now)).toBe(true);
+    expect(isEditorialLoginAllowed("proxy:192.0.2.11", now)).toBe(true);
+    expect(isEditorialLoginAllowed("proxy:192.0.2.10", now)).toBe(false);
+    clearEditorialLoginFailures();
   });
 });

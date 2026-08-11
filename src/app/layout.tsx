@@ -10,7 +10,7 @@ const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-serif", di
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  robots: siteUrl.includes("localhost") || siteUrl.includes("127.0.0.1") ? { index: false, follow: false } : { index: true, follow: true },
+  robots: siteUrl.includes("localhost") || siteUrl.includes("127.0.0.1") || siteUrl.includes("bsv-hoexter.netlify.app") ? { index: false, follow: false } : { index: true, follow: true },
   title: "BSV Höxter",
   icons: { icon: "/favicon.ico" },
 };

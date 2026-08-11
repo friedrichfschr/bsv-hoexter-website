@@ -1,6 +1,6 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { isEditorialRequestAuthorized } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
 import { resolveEditorialDirectory } from "@/lib/editorial";
 import { storeUpload } from "@/lib/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
@@ -8,7 +8,13 @@ import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body"
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  if (!isEditorialRequestAuthorized(request)) return NextResponse.json({ error: "Redaktionszugang erforderlich." }, { status: 401 });
+  const authorization = authorizeEditorialRequest(request);
+  if (authorization !== "authorized") {
+    return NextResponse.json(
+      { error: authorization === "rate-limited" ? "Zu viele fehlgeschlagene Anmeldeversuche. Bitte später erneut versuchen." : "Redaktionszugang erforderlich." },
+      { status: authorization === "rate-limited" ? 429 : 401, ...(authorization === "rate-limited" ? { headers: { "Retry-After": String(EDITORIAL_LOGIN_RETRY_AFTER_SECONDS) } } : {}) },
+    );
+  }
   try {
     const boundedRequest = await bufferRequestBody(request, 5_100_000);
     const form = await boundedRequest.formData();

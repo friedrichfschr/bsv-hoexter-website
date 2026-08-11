@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isEditorialRequestAuthorized } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
 import { updateArticle } from "@/lib/articles";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 
@@ -7,12 +7,16 @@ type Context = { params: Promise<{ id: string }> };
 
 export const runtime = "nodejs";
 
-function unauthorized() {
-  return NextResponse.json({ error: "Redaktionszugang erforderlich." }, { status: 401 });
+function unauthorized(rateLimited = false) {
+  return NextResponse.json(
+    { error: rateLimited ? "Zu viele fehlgeschlagene Anmeldeversuche. Bitte später erneut versuchen." : "Redaktionszugang erforderlich." },
+    { status: rateLimited ? 429 : 401, ...(rateLimited ? { headers: { "Retry-After": String(EDITORIAL_LOGIN_RETRY_AFTER_SECONDS) } } : {}) },
+  );
 }
 
 export async function PUT(request: Request, { params }: Context) {
-  if (!isEditorialRequestAuthorized(request)) return unauthorized();
+  const authorization = authorizeEditorialRequest(request);
+  if (authorization !== "authorized") return unauthorized(authorization === "rate-limited");
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
   }

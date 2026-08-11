@@ -329,6 +329,7 @@ Feature-specific components belong under `src/features/<feature>/`. Truly shared
 | `PREVIEW_FORMS_ENABLED` | Explicitly enables local-file form writes in production mode |
 | `PREVIEW_SUBMISSIONS_DIR` | Private local moderation directory |
 | `EDITORIAL_API_KEY` | Development editorial API secret |
+| `EDITORIAL_TRUSTED_PROXY` | Enables per-client rate limiting from trusted proxy headers; keep false unless the proxy overwrites them |
 | `EDITORIAL_CONTENT_DIRECTORY` | Local editorial JSON/media directory |
 
 Copy names exactly from `.env.example`. Secret values belong in deployment configuration, never in Git.

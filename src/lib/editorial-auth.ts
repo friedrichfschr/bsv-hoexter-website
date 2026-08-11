@@ -6,7 +6,7 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_FAILURES = 5;
 
 type LoginFailure = { count: number; resetAt: number };
-let loginFailure: LoginFailure | undefined;
+const loginFailures = new Map<string, LoginFailure>();
 
 type EditorialEnvironment = Record<string, string | undefined>;
 
@@ -29,27 +29,39 @@ export function isEditorialApiKeyValid(supplied: string, environment: EditorialE
   return Boolean(configured && safeEqual(supplied, configured));
 }
 
-function pruneLoginFailure(now: number) {
-  if (loginFailure && loginFailure.resetAt <= now) loginFailure = undefined;
+function pruneLoginFailures(now: number) {
+  for (const [client, failure] of loginFailures) {
+    if (failure.resetAt <= now) loginFailures.delete(client);
+  }
 }
 
-export function isEditorialLoginAllowed(now = Date.now()) {
-  pruneLoginFailure(now);
-  return (loginFailure?.count ?? 0) < LOGIN_MAX_FAILURES;
+export function editorialLoginClientIdentifier(request: Request, environment: EditorialEnvironment = process.env) {
+  if (environment.EDITORIAL_TRUSTED_PROXY === "true") {
+    const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    if (forwarded) return `proxy:${forwarded}`;
+    const real = request.headers.get("x-real-ip")?.trim();
+    if (real) return `proxy:${real}`;
+  }
+  return "local-process";
 }
 
-export function recordEditorialLoginFailure(now = Date.now()) {
-  pruneLoginFailure(now);
-  const current = loginFailure;
+export function isEditorialLoginAllowed(client: string, now = Date.now()) {
+  pruneLoginFailures(now);
+  return (loginFailures.get(client)?.count ?? 0) < LOGIN_MAX_FAILURES;
+}
+
+export function recordEditorialLoginFailure(client: string, now = Date.now()) {
+  pruneLoginFailures(now);
+  const current = loginFailures.get(client);
   if (!current) {
-    loginFailure = { count: 1, resetAt: now + LOGIN_WINDOW_MS };
+    loginFailures.set(client, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
     return;
   }
   current.count += 1;
 }
 
-export function clearEditorialLoginFailures() {
-  loginFailure = undefined;
+export function clearEditorialLoginFailures(client: string) {
+  loginFailures.delete(client);
 }
 
 export const EDITORIAL_LOGIN_RETRY_AFTER_SECONDS = Math.ceil(LOGIN_WINDOW_MS / 1000);
@@ -79,17 +91,25 @@ function editorialSessionFromCookie(header: string | null) {
   return value?.slice(EDITORIAL_SESSION_COOKIE.length + 1);
 }
 
-export function isEditorialRequestAuthorized(request: Request, environment: EditorialEnvironment = process.env) {
+export type EditorialAuthorizationResult = "authorized" | "unauthorized" | "rate-limited";
+
+export function authorizeEditorialRequest(request: Request, environment: EditorialEnvironment = process.env, now = Date.now()): EditorialAuthorizationResult {
+  const client = editorialLoginClientIdentifier(request, environment);
   const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
+    if (!isEditorialLoginAllowed(client, now)) return "rate-limited";
     if (isEditorialApiKeyValid(authorization.slice(7), environment)) {
-      clearEditorialLoginFailures();
-      return true;
+      clearEditorialLoginFailures(client);
+      return "authorized";
     }
-    if (isEditorialLoginAllowed()) recordEditorialLoginFailure();
-    return false;
+    recordEditorialLoginFailure(client, now);
+    return "unauthorized";
   }
   const authorized = isEditorialSessionAuthorized(editorialSessionFromCookie(request.headers.get("cookie")), environment);
-  if (authorized) clearEditorialLoginFailures();
-  return authorized;
+  if (authorized) clearEditorialLoginFailures(client);
+  return authorized ? "authorized" : "unauthorized";
+}
+
+export function isEditorialRequestAuthorized(request: Request, environment: EditorialEnvironment = process.env, now = Date.now()) {
+  return authorizeEditorialRequest(request, environment, now) === "authorized";
 }

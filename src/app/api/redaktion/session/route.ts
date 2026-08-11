@@ -5,6 +5,7 @@ import {
   createEditorialSessionToken,
   EDITORIAL_LOGIN_RETRY_AFTER_SECONDS,
   EDITORIAL_SESSION_COOKIE,
+  editorialLoginClientIdentifier,
   isEditorialLoginAllowed,
   isEditorialApiKeyValid,
   recordEditorialLoginFailure,
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 const SESSION_MAX_AGE = 8 * 60 * 60;
 
 export async function POST(request: Request) {
+  const client = editorialLoginClientIdentifier(request);
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
   }
@@ -22,16 +24,16 @@ export async function POST(request: Request) {
     const boundedRequest = await bufferRequestBody(request, 2_000);
     const body = await boundedRequest.json() as { key?: unknown };
     if (typeof body.key !== "string" || !isEditorialApiKeyValid(body.key)) {
-      if (!isEditorialLoginAllowed()) {
+      if (!isEditorialLoginAllowed(client)) {
         return NextResponse.json(
           { error: "Zu viele fehlgeschlagene Anmeldeversuche. Bitte später erneut versuchen." },
           { status: 429, headers: { "Retry-After": String(EDITORIAL_LOGIN_RETRY_AFTER_SECONDS) } },
         );
       }
-      recordEditorialLoginFailure();
+      recordEditorialLoginFailure(client);
       return NextResponse.json({ error: "Anmeldung fehlgeschlagen." }, { status: 401 });
     }
-    clearEditorialLoginFailures();
+    clearEditorialLoginFailures(client);
     const response = NextResponse.json({ authenticated: true });
     response.cookies.set({
       name: EDITORIAL_SESSION_COOKIE,
