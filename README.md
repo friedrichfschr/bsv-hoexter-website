@@ -24,3 +24,9 @@ npm run test:e2e
 ```
 
 Copy `.env.example` into your deployment environment and never commit real secrets, editorial data, or uploaded media.
+
+### Netlify testing
+
+Use `npm run build` as the Netlify build command. Set `NEXT_PUBLIC_SITE_URL` to a complete absolute URL such as `https://your-site.netlify.app`, or leave it unset and let Netlify's `DEPLOY_PRIME_URL`/`URL` values provide the deploy URL. Do not use masked placeholders such as `****` as the value.
+
+For the testing scaffold, configure `EDITORIAL_API_KEY` in Netlify environment variables. The default local editorial directory is suitable for testing only; use durable storage before production.
