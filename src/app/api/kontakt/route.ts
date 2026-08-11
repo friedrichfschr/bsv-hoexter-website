@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validateContact } from "@/lib/contact";
 import { appendPreviewRecord } from "@/lib/preview-store";
 import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 
 export async function POST(request: Request) {
   if (!isPreviewFormEnabled(process.env)) {
@@ -10,11 +11,9 @@ export async function POST(request: Request) {
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
   }
-  if (Number(request.headers.get("content-length") ?? 0) > 20_000) {
-    return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
-  }
   try {
-    const body: unknown = await request.json();
+    const boundedRequest = await bufferRequestBody(request, 20_000);
+    const body: unknown = await boundedRequest.json();
     if (JSON.stringify(body).length > 20_000) return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
     const parsed = validateContact(body);
     if (!parsed.success) {
@@ -23,7 +22,10 @@ export async function POST(request: Request) {
     const directory = resolvePreviewDirectory(process.env);
     const record = await appendPreviewRecord(directory, "contact", parsed.data);
     return NextResponse.json({ id: record.id }, { status: 202 });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
+    }
     return NextResponse.json({ error: "Die Nachricht konnte nicht verarbeitet werden." }, { status: 400 });
   }
 }

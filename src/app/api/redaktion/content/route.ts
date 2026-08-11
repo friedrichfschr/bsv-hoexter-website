@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isEditorialRequestAuthorized } from "@/lib/editorial-auth";
 import { readEditorialContent, resolveEditorialDirectory, writeEditorialContent } from "@/lib/editorial";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,9 +25,13 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
   }
   try {
-    const content = await writeEditorialContent(resolveEditorialDirectory(), await request.json());
+    const boundedRequest = await bufferRequestBody(request, 20_000_000);
+    const content = await writeEditorialContent(resolveEditorialDirectory(), await boundedRequest.json());
     return NextResponse.json(content);
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
+    }
     return NextResponse.json({ error: "Bitte alle redaktionellen Felder prüfen." }, { status: 400 });
   }
 }

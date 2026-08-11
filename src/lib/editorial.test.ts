@@ -7,23 +7,23 @@ import { editorialContentSchema, readEditorialContent, writeEditorialContent } f
 
 const content = {
   articles: [{
-    id: "article-1",
-    slug: "erste-nachricht",
-    title: "Erste Nachricht",
-    summary: "Eine kurze und verständliche Zusammenfassung.",
-    body: "Der vollständige Nachrichtentext für die öffentliche Seite.",
-    publishedAt: "2026-08-11",
+    id: "test-article",
+    slug: "test-article",
+    title: "Test article",
+    summary: "A test-only article summary.",
+    body: "A test-only body with enough content for schema validation.",
+    publishedAt: "2099-01-01",
     status: "published" as const,
     imageId: "",
   }],
   documents: [{
-    id: "document-1",
-    title: "Satzung",
+    id: "test-document",
+    title: "Test document",
     kind: "satzung" as const,
-    date: "2026-08-11",
+    date: "2099-01-01",
     status: "draft" as const,
-    mediaId: "media-1",
-    fileName: "satzung.pdf",
+    mediaId: "test-media",
+    fileName: "test-document.pdf",
   }],
 };
 

@@ -47,6 +47,7 @@ src/
     ├── editorial-auth.ts        Editorial API authentication boundary
     ├── preview-config.ts        Local form/storage feature flags
     ├── preview-store.ts         Append-only local moderation records
+    ├── request-body.ts          Streaming request-size enforcement
     ├── site.ts                  Canonical site URL resolution
     ├── submission.ts            Opportunity submission validation
     └── uploads.ts               File size, MIME, signature, and storage checks
@@ -180,6 +181,8 @@ API routes under `src/app/api/` are transport adapters. They should:
 6. Return minimal JSON and appropriate HTTP status codes.
 
 Do not put layout logic or React code in API routes. Do not expose filesystem paths.
+
+`src/lib/request-body.ts` reads request streams with a hard byte limit before JSON or multipart parsing. All mutating routes must use it; `Content-Length` alone is not a security boundary because it can be absent or untrusted.
 
 ### 5.4 Upload security
 
