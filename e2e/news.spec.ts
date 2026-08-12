@@ -47,7 +47,8 @@ test("published articles appear in the index and detail route", async ({ page })
   await expect(page.getByRole("link", { name: /Alle Meldungen/ })).toHaveAttribute("href", "/aktuelles");
 });
 
-test("admin can log in, publish an article, and log out", async ({ page }) => {
+test("admin can log in, publish an article, and log out", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Editorial mutation is covered once; responsive routes are covered separately.");
   await replaceEditorialContent([]);
   await page.goto("/redaktion");
   await expect(page.getByRole("heading", { level: 1, name: "Anmelden" })).toBeVisible();
@@ -72,7 +73,8 @@ test("admin can log in, publish an article, and log out", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Anmelden" })).toBeVisible();
 });
 
-test("published article images are rendered with alternative text", async ({ page }) => {
+test("published article images are rendered with alternative text", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Editorial upload mutation is covered once.");
   const api = await playwrightRequest.newContext({ baseURL: "http://127.0.0.1:3000" });
   const upload = await api.post("/api/redaktion/upload", {
     headers: { Authorization: `Bearer ${editorialKey}` },

@@ -82,7 +82,28 @@ submissions. Every submission requires a title, contact email, and consent.
 Event submissions additionally require description, date, location, age range,
 website, organizer, and one of `Freizeit`, `Berufsorientierung`, or `Hobbys`.
 Poster files remain private pending moderation and use the existing 5 MB upload
-validation boundary. Preview records are appended to `board-submissions.jsonl`.
+validation boundary.
+
+Notice-board moderation is stored in `notice-board.json` beside the editorial
+content. `src/lib/notice-board-moderation.ts` owns its Zod schemas, serialized
+read-modify-write queue, atomic replacement, moderation transitions, and public
+selectors. Submitted events and posters always begin as `pending`; only
+`approved` events and approved, unexpired posters pass public selectors.
+
+The Redaktion workspace has `Aktuelles`, `Veranstaltungen`, and `Poster` tabs.
+Editors can correct event fields before approval. Poster approval requires a
+board assignment, percentage-based position and size, bounded rotation, and an
+expiry date. Combined submissions initialize poster expiry from the event date.
+The server assigns increasing layers when posters are first approved or
+explicitly moved to the front, so newer placements render above older ones.
+Public poster media is delivered only when an approved, currently unexpired
+record references its opaque upload ID; pending media is available only through
+the authenticated Redaktion endpoint.
+Poster submissions require their own expiry date. Rejected events and posters
+remain in a separate Redaktion section for 30 days after rejection and are then
+removed automatically when the moderation store is loaded; poster payload and
+metadata are removed with their record. The public boards contain no hard-coded
+posters, and approved posters open in a keyboard-dismissible enlarged view.
 
 Top-level operational files:
 
@@ -277,7 +298,7 @@ Three primary navigation destinations remain heading-only placeholders. News and
 | `/impressum` | Approved legal notice |
 | `/datenschutz` | Approved privacy information |
 | `/barrierefreiheit` | Accessibility statement and feedback route |
-| `/redaktion` | Password-gated editorial workspace for article drafts, publishing, and image uploads |
+| `/redaktion` | Password-gated workspace for articles, event moderation, and visual poster placement |
 
 Do not add a route merely to display placeholder prose. Until content and process are approved, leave it unimplemented.
 

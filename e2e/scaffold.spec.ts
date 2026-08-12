@@ -27,11 +27,14 @@ test("navigation destinations render placeholder pages", async ({ page }) => {
     if (route === "/schwarzes-brett") {
       await expect(page.locator("main").getByRole("heading", { level: 1, name: heading })).toHaveClass(/bulletin-board-heading/);
       await expect(page.locator("main .bulletin-board-image")).toHaveCount(2);
-      await expect(page.locator("main .bulletin-board-poster img")).toHaveCount(4);
+      await expect(page.locator("main .bulletin-board-poster:not(.bulletin-board-poster-approved)")).toHaveCount(0);
       await expect(page.locator("main .bulletin-board-image").first()).toHaveAttribute("src", /bulletin-board-transparent/);
+      await expect(page.getByRole("heading", { level: 2, name: "Veranstaltungen" })).toBeVisible();
     }
-    await expect(page.locator("main").getByRole("heading")).toHaveCount(1);
-    await expect(page.locator("main").locator("p, article, aside, form, ul, ol")).toHaveCount(0);
+    if (route !== "/schwarzes-brett") {
+      await expect(page.locator("main").getByRole("heading")).toHaveCount(1);
+      await expect(page.locator("main").locator("p, article, aside, form, ul, ol")).toHaveCount(0);
+    }
   }
 });
 
@@ -67,6 +70,7 @@ test("board submission form supports poster, event, and combined entries", async
 
   await page.getByLabel("Nur Poster").check();
   await expect(page.getByLabel("Posterdatei")).toBeVisible();
+  await expect(page.getByLabel("Ablaufdatum des Posters")).toBeVisible();
   await expect(page.getByLabel("Beschreibung")).toHaveCount(0);
 
   await page.getByLabel("Nur Veranstaltung").check();

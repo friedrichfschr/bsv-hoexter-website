@@ -27,6 +27,7 @@ describe("validateSubmission", () => {
     const result = validateSubmission({
       submissionKind: "poster",
       title: "Test poster",
+      posterExpiresAt: "2026-11-08",
       contactEmail: "test@example.org",
       consent: true,
     });
@@ -34,7 +35,12 @@ describe("validateSubmission", () => {
   });
 
   it("accepts combined poster and event submissions", () => {
-    expect(validateSubmission({ ...valid, submissionKind: "both" }).success).toBe(true);
+    expect(validateSubmission({ ...valid, submissionKind: "both", posterExpiresAt: "2026-11-09" }).success).toBe(true);
+  });
+
+  it("requires a poster expiry date for poster and combined submissions", () => {
+    expect(validateSubmission({ submissionKind: "poster", title: "Test poster", contactEmail: "test@example.org", consent: true }).success).toBe(false);
+    expect(validateSubmission({ ...valid, submissionKind: "both", posterExpiresAt: "" }).success).toBe(false);
   });
 
   it("requires every event field for event and combined submissions", () => {

@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { Article } from "@/lib/editorial";
 import { formatArticleDate } from "@/features/news/article-model";
+import { EventModerationPanel } from "@/features/notice-board/EventModerationPanel";
+import { PosterModerationPanel } from "@/features/notice-board/PosterModerationPanel";
 
 type EditorValues = {
   slug: string;
@@ -40,6 +42,7 @@ function valuesFromArticle(article: Article): EditorValues {
 }
 
 export function EditorialDashboard() {
+  const [activeTab, setActiveTab] = useState<"articles" | "events" | "posters">("articles");
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [values, setValues] = useState<EditorValues>(emptyValues);
@@ -140,19 +143,32 @@ export function EditorialDashboard() {
 
   if (busy) return <section className="editorial-page shell"><p>Redaktion wird geladen …</p></section>;
 
+  const headings = {
+    articles: "Artikel verwalten",
+    events: "Veranstaltungen prüfen",
+    posters: "Poster platzieren",
+  } as const;
+
   return (
     <section className="editorial-page shell" aria-labelledby="editorial-heading">
       <header className="editorial-header">
         <div>
           <p className="news-eyebrow">Redaktion</p>
-          <h1 id="editorial-heading">Artikel verwalten</h1>
+          <h1 id="editorial-heading">{headings[activeTab]}</h1>
         </div>
         <div className="editorial-actions">
-          <button className="editorial-button editorial-button-secondary" type="button" onClick={startNewArticle}>Neuer Artikel</button>
+          {activeTab === "articles" ? <button className="editorial-button editorial-button-secondary" type="button" onClick={startNewArticle}>Neuer Artikel</button> : null}
           <button className="editorial-button editorial-button-quiet" type="button" onClick={logout}>Abmelden</button>
         </div>
       </header>
-      <div className="editorial-layout">
+      <div className="editorial-tabs" role="tablist" aria-label="Redaktionsbereiche">
+        <button type="button" role="tab" aria-selected={activeTab === "articles"} onClick={() => setActiveTab("articles")}>Aktuelles</button>
+        <button type="button" role="tab" aria-selected={activeTab === "events"} onClick={() => setActiveTab("events")}>Veranstaltungen</button>
+        <button type="button" role="tab" aria-selected={activeTab === "posters"} onClick={() => setActiveTab("posters")}>Poster</button>
+      </div>
+      {activeTab === "events" ? <EventModerationPanel /> : null}
+      {activeTab === "posters" ? <PosterModerationPanel /> : null}
+      {activeTab === "articles" ? <div className="editorial-layout">
         <aside className="editorial-article-list" aria-label="Artikel">
           <h2>Vorhandene Artikel</h2>
           {articles.length === 0 ? <p className="editorial-muted">Noch keine Artikel.</p> : (
@@ -203,7 +219,7 @@ export function EditorialDashboard() {
           {error ? <p className="editorial-error" role="alert">{error}</p> : null}
           <button className="editorial-button" type="submit" disabled={saving}>{saving ? "Wird gespeichert …" : "Speichern"}</button>
         </form>
-      </div>
+      </div> : null}
     </section>
   );
 }

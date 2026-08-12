@@ -25,6 +25,7 @@ export const submissionSchema = z.object({
   category: z.union([z.literal(""), z.enum(eventSubmissionCategories)]).optional().default(""),
   website: optionalWebsite,
   date: z.union([z.literal(""), calendarDate]).optional().default(""),
+  posterExpiresAt: z.union([z.literal(""), calendarDate]).optional().default(""),
   location: z.string().trim().max(160).optional().default(""),
   ageRange: z.string().trim().max(100).optional().default(""),
   contactName: z.string().trim().max(100).optional().default(""),
@@ -32,6 +33,9 @@ export const submissionSchema = z.object({
   description: z.string().trim().max(1500).optional().default(""),
   consent: z.literal(true, { error: "Bitte die Angaben und Kontaktaufnahme bestätigen." }),
 }).superRefine((submission, context) => {
+  if (submissionRequiresPoster(submission.submissionKind) && !submission.posterExpiresAt) {
+    context.addIssue({ code: "custom", path: ["posterExpiresAt"], message: "Bitte ein Ablaufdatum für das Poster auswählen." });
+  }
   if (!submissionIncludesEvent(submission.submissionKind)) return;
   const required = [
     ["organizer", submission.organizer, "Bitte den Veranstalter angeben."],

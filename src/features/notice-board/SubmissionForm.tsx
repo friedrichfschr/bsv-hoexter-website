@@ -79,8 +79,13 @@ export function SubmissionForm() {
           <legend>Poster</legend>
           <label className="form-field">
             <span>Posterdatei</span>
-            <input name="posterFile" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required />
-            <small>PNG, JPEG, WebP oder PDF, maximal 5 MB</small>
+            <input name="posterFile" type="file" accept="image/png,image/jpeg,image/webp" required />
+            <small>PNG, JPEG oder WebP, maximal 5 MB</small>
+          </label>
+          <label className="form-field">
+            <span>Ablaufdatum des Posters</span>
+            <input name="posterExpiresAt" type="date" required />
+            <small>Ab diesem Tag wird das Poster automatisch ausgeblendet.</small>
           </label>
         </fieldset>
       ) : null}

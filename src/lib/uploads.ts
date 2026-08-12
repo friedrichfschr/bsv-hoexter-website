@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const MAX_UPLOAD_BYTES = 5_000_000;
@@ -71,4 +71,15 @@ export async function readStoredUpload(directory: string, id: string) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;
   }
+}
+
+export async function removeStoredUpload(directory: string, upload: StoredUpload) {
+  await Promise.all([
+    unlink(path.join(/* turbopackIgnore: true */ directory, upload.storedName)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    }),
+    unlink(path.join(/* turbopackIgnore: true */ directory, `${upload.id}.json`)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    }),
+  ]);
 }

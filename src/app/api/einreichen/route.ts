@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { submissionRequiresPoster, validateSubmission } from "@/lib/submission";
-import { appendPreviewRecord } from "@/lib/preview-store";
-import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
 import path from "node:path";
+import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/lib/notice-board-moderation";
+import { isPreviewFormEnabled } from "@/lib/preview-config";
 import { storeUpload } from "@/lib/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
 
@@ -36,17 +36,20 @@ export async function POST(request: Request) {
     if (submissionRequiresPoster(parsed.data.submissionKind) && !posterFile) {
       return NextResponse.json({ error: "Bitte eine Posterdatei auswählen.", field: "posterFile" }, { status: 400 });
     }
-    const directory = resolvePreviewDirectory(process.env);
+    if (posterFile && !posterFile.type.startsWith("image/")) {
+      return NextResponse.json({ error: "Poster müssen als PNG, JPEG oder WebP eingereicht werden.", field: "posterFile" }, { status: 400 });
+    }
+    const directory = resolveNoticeBoardDirectory();
     let posterUpload;
     if (posterFile && submissionRequiresPoster(parsed.data.submissionKind)) {
       try {
-        posterUpload = await storeUpload(path.join(directory, "board-uploads"), posterFile);
+        posterUpload = await storeUpload(path.join(directory, "board-media"), posterFile);
       } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "Das Poster konnte nicht gespeichert werden.", field: "posterFile" }, { status: 400 });
       }
     }
-    const record = await appendPreviewRecord(directory, "board-submissions", { ...parsed.data, posterUpload });
-    return NextResponse.json({ id: record.id }, { status: 202 });
+    const record = await createNoticeBoardSubmission(directory, parsed.data, posterUpload);
+    return NextResponse.json({ eventId: record.event?.id, posterId: record.poster?.id }, { status: 202 });
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
       return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
