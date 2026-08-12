@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { editorialContentSchema, readEditorialContent, writeEditorialContent } from "@/lib/editorial";
+import { defaultAboutContent } from "@/lib/about-schema";
 
 const content = {
+  about: defaultAboutContent,
   articles: [{
     id: "test-article",
     slug: "test-article",
@@ -41,7 +43,7 @@ describe("editorial content", () => {
 
   it("returns an empty scaffold when no workspace exists yet", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-editorial-empty-"));
-    await expect(readEditorialContent(directory)).resolves.toEqual({ articles: [], documents: [] });
+    await expect(readEditorialContent(directory)).resolves.toEqual({ articles: [], documents: [], about: defaultAboutContent });
   });
 
   it("keeps concurrent writes isolated from each other's temporary files", async () => {

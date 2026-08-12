@@ -36,10 +36,11 @@ src/
 │   ├── foundation.css           Tailwind theme, tokens, reset, shell, sections
 │   ├── aktuelles/page.tsx       Published article index
 │   ├── aktuelles/[slug]/        Published article detail route
-│   ├── mitmachen/page.tsx       Heading-only participation placeholder
+│   ├── mitmachen/page.tsx       BDK participation and next-date status
+│   ├── mitmachen/anmelden/      BDK interest/signup form route
 │   ├── schwarzes-brett/page.tsx Visual notice-board foundation
 │   ├── schwarzes-brett/einreichen/ Poster/event submission route
-│   ├── ueber-uns/page.tsx       Heading-only about placeholder
+│   ├── ueber-uns/page.tsx       Dynamic About, governance, archive, and founding page
 │   ├── layout.tsx               Fonts, metadata, shared header/main/footer
 │   └── page.tsx                 Minimal homepage
 ├── components/
@@ -47,13 +48,18 @@ src/
 │   └── layout/
 │       └── SiteHeader.tsx       Responsive logo/navigation client boundary
 ├── features/
+│   ├── about/                   Dynamic About/BDK/Vorstand editorial workspace
 │   ├── news/                    Public news and editorial workspace components
+│   ├── bdk/                     BDK signup client boundary
 │   └── notice-board/            Poster/event submission form
 ├── domain/
 │   ├── events.ts                Empty event collection, types, pure selectors
 │   └── notice-board.ts          Board and poster placement records
 └── lib/
+    ├── about-schema.ts          About, board, BDK, and archive schemas
+    ├── about-content.ts         About validation, mutation, and public selectors
     ├── calendar.ts              Calendar serialization
+    ├── bdk-signup.ts            BDK signup schema and validation
     ├── contact.ts               Contact validation
     ├── articles.ts              Article create/update service boundary
     ├── editorial.ts             Editorial schemas and repository adapter
@@ -66,16 +72,12 @@ src/
     └── uploads.ts               File size, MIME, signature, and storage checks
 ```
 
-The Schwarzes-Brett route currently has one deliberately visual exception to the
-heading-only placeholder rule: it renders the section heading, two decorative
-copies of `public/bulletin-board-transparent.png`, and the four supplied poster
-placeholders. The transparent board image is the canvas; poster records from
-`src/domain/notice-board.ts` define each image's percentage position, size, and
-rotation. The model records a total design capacity of roughly 10–15 posters
-across both boards. A future editor can replace those records without changing
-the page rendering layer. Poster wrappers remain transparent and images use
-`object-fit: contain` so source artwork is not stretched or given an artificial
-white backing.
+The Schwarzes-Brett route renders two copies of
+`public/bulletin-board-transparent.png` as responsive canvases. Approved,
+unexpired poster records define percentage position, size, rotation, and layer;
+there are no hard-coded public posters. Poster wrappers remain transparent and
+images use `object-fit: contain` so source artwork is not stretched or given an
+artificial white backing.
 
 `/schwarzes-brett/einreichen` accepts poster-only, event-only, or combined
 submissions. Every submission requires a title, contact email, and consent.
@@ -89,8 +91,11 @@ content. `src/lib/notice-board-moderation.ts` owns its Zod schemas, serialized
 read-modify-write queue, atomic replacement, moderation transitions, and public
 selectors. Submitted events and posters always begin as `pending`; only
 `approved` events and approved, unexpired posters pass public selectors.
+The public event list has client-side filters for exactly the three validated
+categories while preserving an unfiltered server-rendered list initially.
 
-The Redaktion workspace has `Aktuelles`, `Veranstaltungen`, and `Poster` tabs.
+The Redaktion workspace has `Aktuelles`, `Veranstaltungen`, `Poster`, and
+`Über uns` tabs.
 Editors can correct event fields before approval. Poster approval requires a
 board assignment, percentage-based position and size, bounded rotation, and an
 expiry date. Combined submissions initialize poster expiry from the event date.
@@ -104,6 +109,30 @@ remain in a separate Redaktion section for 30 days after rejection and are then
 removed automatically when the moderation store is loaded; poster payload and
 metadata are removed with their record. The public boards contain no hard-coded
 posters, and approved posters open in a keyboard-dismissible enlarged view.
+
+`/mitmachen` owns the BDK participation content. Until an official date exists,
+its top action presents the explicit state `Termin wird noch bekannt gegeben`
+and links to `/mitmachen/anmelden`. The form records an interest/pre-registration,
+not a confirmed conference place, through the bounded `/api/bdk-anmeldung` JSON
+boundary. Valid records use the existing private append-only preview store and
+remain disabled on production deployments unless `PREVIEW_FORMS_ENABLED=true`.
+The preview boundary applies a bounded body, per-process client rate limit,
+duplicate suppression, and a five-megabyte collection quota. Production still
+requires edge/shared abuse controls and durable consent-aware storage.
+
+`/ueber-uns` is backed by the `about` collection inside the serialized editorial
+repository. Its schemas and service own introductory text, Vorstand terms and
+photos, BDK records, statutes, invitations, agendas, protocols, publication
+state, document references, and media existence checks. The initial archive is
+seeded from the supplied founding documents: the Satzung, school invitations,
+and agenda for the first BDK on 2 July 2026 at the Schulen der Brede in Brakel.
+The source PDFs are bundled outside the public directory under
+`content/about-documents/` and served only through the publication-aware document
+route; subsequent PDFs and Vorstand photos use validated private uploads and
+narrow published media routes.
+Missing current-board photo/message fields render honest empty states instead of
+invented people or statements. Legacy whole-workspace writes preserve About data
+when omitted and apply the same About invariants when supplied.
 
 Top-level operational files:
 
@@ -204,7 +233,10 @@ route component.
 
 - Server Components are the default.
 - Add `"use client"` only at the smallest interactive boundary.
-- `SiteHeader.tsx` is the current client boundary because it owns the phone menu toggle, Escape-key handling, focus restoration, and active-route state. Route pages and the root layout remain Server Components.
+- `SiteHeader.tsx` progressively enhances a native `details`/`summary` phone menu,
+so navigation remains operable before or without hydration while retaining
+Escape handling, focus restoration, and active-route state. Poster links likewise
+remain direct media links without JavaScript and upgrade to a modal after hydration.
 - Components receive typed content through props; they do not import factual datasets directly.
 - A route assembles components; it should not contain a large block of repeated markup.
 - Every icon-only action needs an accessible name.
@@ -215,7 +247,9 @@ route component.
 
 ### 5.1 Public content
 
-The public scaffold contains no records. `src/domain/events.ts` exports an empty `events` array. Editorial content defaults to empty arrays in `src/lib/editorial.ts`.
+`src/domain/events.ts` exports an empty static event array. Editorial articles and
+documents default to empty arrays, while the About collection starts with the
+verified founding BDK and its supplied source documents.
 
 Future factual records must include provenance and publication state. Event records already reserve fields for source URL, source-check date, organizer, exactness, sessions, age range, place, and expiry.
 
@@ -282,7 +316,9 @@ This is not the final editor identity system. Production should use individual a
 
 ## 6. Route map
 
-Three primary navigation destinations remain heading-only placeholders. News and the board submission flow are implemented vertical slices. Expand remaining placeholders only when their complete vertical slice is ready:
+Public news, notice-board, BDK participation, and About/archive routes are
+implemented vertical slices. Expand remaining placeholders only when their
+complete vertical slice is ready:
 
 | Route | Responsibility |
 | --- | --- |
@@ -291,14 +327,14 @@ Three primary navigation destinations remain heading-only placeholders. News and
 | `/schwarzes-brett/einreichen` | Implemented poster-only, event-only, or combined submission and private upload |
 | `/aktuelles` | Reverse-chronological published articles |
 | `/aktuelles/[slug]` | Individual article |
-| `/bdk` | Process, current status, protocols |
 | `/fuer-sven` | Editorial guidance and resources |
-| `/mitmachen` | Participation routes and contact |
-| `/ueber-uns` | Purpose, governance, current Satzung |
+| `/mitmachen` | BDK status and participation routes |
+| `/mitmachen/anmelden` | Interest/signup form for the next BDK |
+| `/ueber-uns` | Dynamic purpose, Vorstand, Satzung, archives, and founding records |
 | `/impressum` | Approved legal notice |
 | `/datenschutz` | Approved privacy information |
 | `/barrierefreiheit` | Accessibility statement and feedback route |
-| `/redaktion` | Password-gated workspace for articles, event moderation, and visual poster placement |
+| `/redaktion` | Password-gated workspace for articles, moderation, poster placement, About, Vorstand, BDKs, and archive files |
 
 Do not add a route merely to display placeholder prose. Until content and process are approved, leave it unimplemented.
 
@@ -375,13 +411,15 @@ Copy names exactly from `.env.example`. Secret values belong in deployment confi
 
 The current public render deliberately consists of:
 
-- the logo and four primary navigation links in `src/components/layout/SiteHeader.tsx`;
+- the logo and five primary navigation links in `src/components/layout/SiteHeader.tsx`;
 - a compact phone header whose labeled menu button exposes one full-width link column, reports its state with `aria-expanded`, and closes with Escape or route selection;
 - one simple `<h1>` on the foundation routes, plus the implemented news index/detail content sourced only from editorial storage;
 - the shared footer in `src/components/Footer.tsx`;
 - global fonts, metadata, and landmarks in `src/app/layout.tsx`;
 - the token system and responsive footer in `src/app/foundation.css`.
 
-The current editorial utility at `/redaktion` is intentionally small: login, article list, draft/publish editor, optional image upload, and logout. It is a development scaffold, not a multi-user CMS.
+The editorial utility at `/redaktion` includes articles, event/poster moderation,
+and dynamic About/Vorstand/BDK/archive records. It remains a development scaffold,
+not a multi-user CMS.
 
 This is the baseline. Add no generic marketing sections, invented examples, fake statistics, stock imagery, gradients, or placeholder articles to make future pages look complete.

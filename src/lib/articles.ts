@@ -9,6 +9,7 @@ import {
   type Article,
 } from "@/lib/editorial";
 import { readStoredUpload } from "@/lib/uploads";
+import { validateAboutContent } from "@/lib/about-content";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });
 export type ArticleMutation = z.input<typeof articleMutationSchema>;
@@ -68,9 +69,15 @@ export async function updateArticle(directory = resolveEditorialDirectory(), id:
 }
 
 export async function replaceEditorialContent(directory = resolveEditorialDirectory(), input: unknown) {
-  return mutateEditorialContent(directory, async () => {
-    const content = editorialContentSchema.parse(input);
+  return mutateEditorialContent(directory, async (current) => {
+    const object = z.object({
+      articles: editorialContentSchema.shape.articles,
+      documents: editorialContentSchema.shape.documents,
+      about: z.unknown().optional(),
+    }).parse(input);
+    const content = editorialContentSchema.parse({ ...object, about: object.about === undefined ? current.about : object.about });
     await validateArticles(directory, content.articles);
+    await validateAboutContent(directory, content.about);
     return { content, result: content };
   });
 }

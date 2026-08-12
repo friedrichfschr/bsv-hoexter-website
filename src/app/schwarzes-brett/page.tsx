@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { noticeBoards } from "@/domain/notice-board";
 import { PosterLightbox } from "@/features/notice-board/PosterLightbox";
+import { EventList } from "@/features/notice-board/EventList";
 import { publicEventEntries, publicPosterEntries, readNoticeBoardContent } from "@/lib/notice-board-moderation";
 
 type PosterStyle = CSSProperties & Record<"--poster-left" | "--poster-top" | "--poster-width" | "--poster-height" | "--poster-rotation", string>;
@@ -67,23 +68,7 @@ export default async function NoticeBoardPage() {
           <p className="news-eyebrow">Termine und Möglichkeiten</p>
           <h2 id="notice-event-heading">Veranstaltungen</h2>
         </div>
-        {approvedEvents.length === 0 ? <p className="notice-event-empty">Aktuell sind keine Veranstaltungen freigegeben.</p> : (
-          <div className="notice-event-list">
-            {approvedEvents.map((event) => (
-              <article className="notice-event" key={event.id}>
-                <div className="notice-event-meta"><span>{event.category}</span><time dateTime={event.date}>{event.date.split("-").reverse().join(".")}</time></div>
-                <h3>{event.title}</h3>
-                <p>{event.description}</p>
-                <dl>
-                  <div><dt>Ort</dt><dd>{event.location}</dd></div>
-                  <div><dt>Alter</dt><dd>{event.ageRange}</dd></div>
-                  <div><dt>Veranstalter</dt><dd>{event.organizer}</dd></div>
-                </dl>
-                <a href={event.website} target="_blank" rel="noreferrer">Zur Veranstaltungsseite</a>
-              </article>
-            ))}
-          </div>
-        )}
+        <EventList events={approvedEvents} />
       </section>
     </section>
   );

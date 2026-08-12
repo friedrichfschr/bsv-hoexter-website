@@ -5,6 +5,7 @@ import type { Article } from "@/lib/editorial";
 import { formatArticleDate } from "@/features/news/article-model";
 import { EventModerationPanel } from "@/features/notice-board/EventModerationPanel";
 import { PosterModerationPanel } from "@/features/notice-board/PosterModerationPanel";
+import { AboutEditorialPanel } from "@/features/about/AboutEditorialPanel";
 
 type EditorValues = {
   slug: string;
@@ -42,7 +43,7 @@ function valuesFromArticle(article: Article): EditorValues {
 }
 
 export function EditorialDashboard() {
-  const [activeTab, setActiveTab] = useState<"articles" | "events" | "posters">("articles");
+  const [activeTab, setActiveTab] = useState<"articles" | "events" | "posters" | "about">("articles");
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [values, setValues] = useState<EditorValues>(emptyValues);
@@ -147,6 +148,7 @@ export function EditorialDashboard() {
     articles: "Artikel verwalten",
     events: "Veranstaltungen prüfen",
     posters: "Poster platzieren",
+    about: "Über uns verwalten",
   } as const;
 
   return (
@@ -165,9 +167,11 @@ export function EditorialDashboard() {
         <button type="button" role="tab" aria-selected={activeTab === "articles"} onClick={() => setActiveTab("articles")}>Aktuelles</button>
         <button type="button" role="tab" aria-selected={activeTab === "events"} onClick={() => setActiveTab("events")}>Veranstaltungen</button>
         <button type="button" role="tab" aria-selected={activeTab === "posters"} onClick={() => setActiveTab("posters")}>Poster</button>
+        <button type="button" role="tab" aria-selected={activeTab === "about"} onClick={() => setActiveTab("about")}>Über uns</button>
       </div>
       {activeTab === "events" ? <EventModerationPanel /> : null}
       {activeTab === "posters" ? <PosterModerationPanel /> : null}
+      {activeTab === "about" ? <AboutEditorialPanel /> : null}
       {activeTab === "articles" ? <div className="editorial-layout">
         <aside className="editorial-article-list" aria-label="Artikel">
           <h2>Vorhandene Artikel</h2>

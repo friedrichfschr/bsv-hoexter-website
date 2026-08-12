@@ -5,6 +5,7 @@ import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/lib/
 import { isPreviewFormEnabled } from "@/lib/preview-config";
 import { storeUpload } from "@/lib/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/lib/public-form-rate-limit";
 
 export async function POST(request: Request) {
   if (!isPreviewFormEnabled(process.env)) {
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.startsWith("application/json") && !contentType.startsWith("multipart/form-data")) {
     return NextResponse.json({ error: "Nicht unterstütztes Datenformat." }, { status: 415 });
+  }
+  if (checkPublicFormRateLimit(request, "notice-board-submission") === "rate-limited") {
+    return NextResponse.json({ error: "Zu viele Einreichungen. Bitte später erneut versuchen." }, { status: 429, headers: { "Retry-After": String(PUBLIC_FORM_RETRY_AFTER_SECONDS) } });
   }
   try {
     const boundedRequest = await bufferRequestBody(request, contentType.startsWith("multipart/form-data") ? 5_100_000 : 20_000);

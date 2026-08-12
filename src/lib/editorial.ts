@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { aboutContentSchema, defaultAboutContent } from "@/lib/about-schema";
 
 const status = z.enum(["draft", "published"]);
 const identifier = z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/);
@@ -45,11 +46,12 @@ export const documentSchema = z.object({
 export const editorialContentSchema = z.object({
   articles: z.array(articleSchema).max(500),
   documents: z.array(documentSchema).max(500),
+  about: aboutContentSchema.default(defaultAboutContent),
 });
 
 export type Article = z.infer<typeof articleSchema>;
 export type EditorialContent = z.infer<typeof editorialContentSchema>;
-export const emptyEditorialContent: EditorialContent = { articles: [], documents: [] };
+export const emptyEditorialContent: EditorialContent = { articles: [], documents: [], about: defaultAboutContent };
 const writeQueues = new Map<string, Promise<void>>();
 
 async function enqueueEditorialWrite<T>(directory: string, operation: () => Promise<T>) {
@@ -97,22 +99,23 @@ export async function writeEditorialContent(directory: string, input: unknown): 
 
 export async function mutateEditorialContent<T>(
   directory: string,
-  mutation: (content: EditorialContent) => Promise<{ content: unknown; result: T }> | { content: unknown; result: T },
+  mutation: (content: EditorialContent) => Promise<{ content: unknown; result: T; afterWrite?: () => Promise<void> }> | { content: unknown; result: T; afterWrite?: () => Promise<void> },
 ) {
   return enqueueEditorialWrite(directory, async () => {
     const current = await readEditorialContent(directory);
     const changed = await mutation(current);
     const content = editorialContentSchema.parse(changed.content);
     await writeEditorialFile(directory, content);
+    await changed.afterWrite?.();
     return changed.result;
   });
 }
 
-export function publishedArticles(content: EditorialContent) {
+export function publishedArticles(content: Pick<EditorialContent, "articles">) {
   return content.articles.filter((article) => article.status === "published").sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 
-export function publishedArticleBySlug(content: EditorialContent, slug: string) {
+export function publishedArticleBySlug(content: Pick<EditorialContent, "articles">, slug: string) {
   return publishedArticles(content).find((article) => article.slug === slug);
 }
 

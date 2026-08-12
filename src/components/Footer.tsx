@@ -17,7 +17,7 @@ export function Footer() {
           <h2>Direkt zu</h2>
           <ul>
             <li><Link href="/schwarzes-brett">Schwarzes Brett</Link></li>
-            <li><Link href="/bdk">Bezirksdelegiertenkonferenz</Link></li>
+            <li><Link href="/mitmachen">Bezirksdelegiertenkonferenz</Link></li>
             <li><Link href="/fuer-sven">Material für SVen</Link></li>
             <li><Link href="/schwarzes-brett/einreichen">Flyer einreichen</Link></li>
           </ul>
@@ -27,7 +27,7 @@ export function Footer() {
           <h2>BSV</h2>
           <ul>
             <li><Link href="/ueber-uns">Über uns</Link></li>
-            <li><Link href="/mitmachen">Mitmachen & Kontakt</Link></li>
+            <li><Link href="/mitmachen">Mitmachen - BDK</Link></li>
             <li><Link href="/aktuelles">Aktuelles</Link></li>
             <li><Link href="/redaktion">Redaktion</Link></li>
           </ul>

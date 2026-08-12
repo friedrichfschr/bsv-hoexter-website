@@ -12,7 +12,7 @@ type PosterLightboxProps = {
 export function PosterLightbox({ src, title, className, style }: PosterLightboxProps) {
   const [open, setOpen] = useState(false);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const trigger = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -38,10 +38,10 @@ export function PosterLightbox({ src, title, className, style }: PosterLightboxP
 
   return (
     <>
-      <button ref={trigger} className={`${className} bulletin-board-poster-button`} style={style} type="button" onClick={() => setOpen(true)} aria-label={`${title} vergrößern`}>
+      <a ref={trigger} className={`${className} bulletin-board-poster-button`} style={style} href={src} onClick={(event) => { event.preventDefault(); setOpen(true); }} aria-label={`${title} vergrößern`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={title} />
-      </button>
+      </a>
       {open ? (
         <div className="poster-lightbox" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
           <button ref={closeButton} className="poster-lightbox-close" type="button" onClick={close} aria-label="Großansicht schließen">×</button>

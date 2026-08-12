@@ -1,13 +1,15 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("renders the navigation, foundation heading, and retained footer", async ({ page }) => {
+test("renders the navigation, foundation heading, and retained footer", async ({ page }, testInfo) => {
   await page.goto("/");
   const navigation = page.locator("#primary-navigation");
+  if (testInfo.project.name === "chromium") await expect(navigation).toBeVisible();
   await expect(page.getByRole("link", { name: "BSV Höxter – Startseite" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Startseite", exact: true, includeHidden: true })).toHaveAttribute("href", "/");
   await expect(navigation.getByRole("link", { name: "Schwarzes Brett", includeHidden: true })).toHaveAttribute("href", "/schwarzes-brett");
   await expect(navigation.getByRole("link", { name: "Aktuelles der BSV", includeHidden: true })).toHaveAttribute("href", "/aktuelles");
-  await expect(navigation.getByRole("link", { name: "Mitmachen", includeHidden: true })).toHaveAttribute("href", "/mitmachen");
+  await expect(navigation.getByRole("link", { name: "Mitmachen - BDK", includeHidden: true })).toHaveAttribute("href", "/mitmachen");
   await expect(navigation.getByRole("link", { name: "Über uns", includeHidden: true })).toHaveAttribute("href", "/ueber-uns");
   await expect(page.getByRole("heading", { level: 1, name: "BSV Höxter" })).toBeVisible();
   await expect(page.getByRole("contentinfo")).toBeVisible();
@@ -17,7 +19,7 @@ test("renders the navigation, foundation heading, and retained footer", async ({
 test("navigation destinations render placeholder pages", async ({ page }) => {
   const destinations = [
     ["/schwarzes-brett", "Schwarzes Brett"],
-    ["/mitmachen", "Mitmachen"],
+    ["/mitmachen", "Mitmachen - BDK"],
     ["/ueber-uns", "Über uns"],
   ] as const;
 
@@ -30,8 +32,9 @@ test("navigation destinations render placeholder pages", async ({ page }) => {
       await expect(page.locator("main .bulletin-board-poster:not(.bulletin-board-poster-approved)")).toHaveCount(0);
       await expect(page.locator("main .bulletin-board-image").first()).toHaveAttribute("src", /bulletin-board-transparent/);
       await expect(page.getByRole("heading", { level: 2, name: "Veranstaltungen" })).toBeVisible();
+      await expect(page.getByRole("group", { name: "Veranstaltungen nach Kategorie filtern" }).getByRole("button")).toHaveText(["Alle", "Freizeit", "Berufsorientierung", "Hobbys"]);
     }
-    if (route !== "/schwarzes-brett") {
+    if (route !== "/schwarzes-brett" && route !== "/mitmachen" && route !== "/ueber-uns") {
       await expect(page.locator("main").getByRole("heading")).toHaveCount(1);
       await expect(page.locator("main").locator("p, article, aside, form, ul, ol")).toHaveCount(0);
     }
@@ -51,11 +54,68 @@ test("phone navigation opens on demand and closes with Escape", async ({ page },
   await menuButton.click();
   await expect(page.getByRole("button", { name: "Menü schließen" })).toHaveAttribute("aria-expanded", "true");
   await expect(navigation).toBeVisible();
-  await expect(navigation.getByRole("link")).toHaveCount(4);
+  await expect(navigation.getByRole("link")).toHaveCount(5);
 
   await page.keyboard.press("Escape");
   await expect(navigation).toBeHidden();
   await expect(menuButton).toBeFocused();
+
+  await menuButton.click();
+  await navigation.getByRole("link", { name: "Mitmachen - BDK" }).click();
+  await expect(page).toHaveURL(/\/mitmachen$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Mitmachen - BDK" })).toBeVisible();
+});
+
+test("BDK page shows the unknown-date state and dedicated signup form", async ({ page }, testInfo) => {
+  await page.goto("/mitmachen");
+  await expect(page.getByRole("heading", { level: 1, name: "Mitmachen - BDK" })).toBeVisible();
+  await expect(page.getByText("Termin wird noch bekannt gegeben", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Für die nächste BDK anmelden" }).click();
+
+  await expect(page).toHaveURL(/\/mitmachen\/anmelden$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Zur nächsten BDK anmelden" })).toBeVisible();
+  await expect(page.getByText("Der Termin steht noch nicht fest", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Name")).toBeVisible();
+  await expect(page.getByLabel("E-Mail-Adresse")).toBeVisible();
+  await expect(page.getByLabel("Schule")).toBeVisible();
+  await expect(page.getByLabel("Ich vertrete meine Schülervertretung")).toBeVisible();
+
+  if (testInfo.project.name === "chromium") {
+    await page.getByLabel("Name").fill("E2E BDK Anmeldung");
+    await page.getByLabel("E-Mail-Adresse").fill("bdk-e2e@example.org");
+    await page.getByLabel("Schule").fill("E2E Schule");
+    await page.getByLabel("Ich vertrete meine Schülervertretung").check();
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Anmeldung vormerken" }).click();
+    await expect(page.getByRole("status")).toContainText("Deine Anmeldung wurde vorgemerkt");
+  }
+});
+
+test("About page renders the dynamic founding archive and source files", async ({ page }) => {
+  await page.goto("/ueber-uns");
+  await expect(page.getByRole("heading", { level: 2, name: "Was wir sind" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Wofür wir stehen" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Der aktuelle Bezirksvorstand" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Unsere Satzung" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Frühere Bezirksvorstände" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Frühere Satzungen" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "BDKs, Protokolle und Dateien" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Gegründet am 02.07.2026" })).toBeVisible();
+  const invitation = page.getByRole("link", { name: "Originale Schuleinladungen zur Gründungs-BDK" });
+  await expect(invitation).toHaveAttribute("href", "/api/about/dokumente/gruendungs-bdk-einladungen-2026");
+  const response = await page.request.get(await invitation.getAttribute("href") ?? "");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toBe("application/pdf");
+});
+
+test("phone navigation opens without client-side JavaScript", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Phone-only progressive enhancement regression");
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByRole("button", { name: "Menü öffnen" }).click();
+  await expect(page.getByRole("navigation", { name: "Hauptnavigation" })).toBeVisible();
+  await context.close();
 });
 
 test("board submission form supports poster, event, and combined entries", async ({ page }) => {
@@ -79,7 +139,7 @@ test("board submission form supports poster, event, and combined entries", async
 });
 
 test("foundation has no serious or critical accessibility violations", async ({ page }) => {
-  const routes = ["/", "/schwarzes-brett", "/schwarzes-brett/einreichen", "/aktuelles", "/mitmachen", "/ueber-uns"];
+  const routes = ["/", "/schwarzes-brett", "/schwarzes-brett/einreichen", "/aktuelles", "/mitmachen", "/mitmachen/anmelden", "/ueber-uns"];
   for (const route of routes) {
     await page.goto(route);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();

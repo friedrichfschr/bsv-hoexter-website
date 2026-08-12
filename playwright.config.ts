@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const testServerCommand = process.platform === "win32"
-  ? 'if exist ".test-editorial-content" rmdir /s /q ".test-editorial-content" & set "EDITORIAL_API_KEY=e2e-editorial-key" && set "EDITORIAL_CONTENT_DIRECTORY=.test-editorial-content" && set "PREVIEW_FORMS_ENABLED=true" && npm run dev -- --hostname 127.0.0.1'
+  ? 'node -e "require(\'node:fs\').rmSync(\'.test-editorial-content\',{recursive:true,force:true})" && set "EDITORIAL_API_KEY=e2e-editorial-key" && set "EDITORIAL_CONTENT_DIRECTORY=.test-editorial-content" && set "PREVIEW_FORMS_ENABLED=true" && npm run dev -- --hostname 127.0.0.1'
   : "rm -rf .test-editorial-content && EDITORIAL_API_KEY=e2e-editorial-key EDITORIAL_CONTENT_DIRECTORY=.test-editorial-content PREVIEW_FORMS_ENABLED=true npm run dev -- --hostname 127.0.0.1";
 
 export default defineConfig({
