@@ -54,6 +54,11 @@ test("admin can edit About and BDK records", async ({ page }, testInfo) => {
   await expect(page.getByLabel("Aktiver Bezirksvorstand")).toHaveValue("bezirksvorstand-2026-27");
   await expect(page.getByText("Aktiver Vorstand", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bildergalerie" })).toHaveCount(0);
+  await page.locator("details.about-editor-record").filter({ hasText: "Gründungs-BDK" }).locator("summary").click();
+  const foundingBdk = page.getByRole("group", { name: "BDK 1" });
+  await expect(foundingBdk.getByLabel("Neuen Anhang BDK 1")).toBeVisible();
+  await expect(foundingBdk.getByLabel("Titel BDK 1", { exact: true })).toHaveCount(0);
+  await expect(foundingBdk.getByLabel("Neues Foto BDK 1")).toHaveCount(0);
   await expect(page.locator("details.about-editor-record").first()).not.toHaveAttribute("open", "");
   await page.getByLabel("Was wir sind").fill("Die BSV Höxter ist die gemeinsame demokratische Stimme der Schülervertretungen im Kreis Höxter.");
   await page.getByRole("button", { name: "BDK hinzufügen" }).click();

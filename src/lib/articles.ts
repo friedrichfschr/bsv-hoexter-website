@@ -9,7 +9,7 @@ import {
   type Article,
 } from "@/lib/editorial";
 import { readStoredUpload } from "@/lib/uploads";
-import { cleanupRemovedAboutUploads, validateAboutContent } from "@/lib/about-content";
+import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/lib/about-content";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });
 export type ArticleMutation = z.input<typeof articleMutationSchema>;
@@ -75,7 +75,8 @@ export async function replaceEditorialContent(directory = resolveEditorialDirect
       documents: editorialContentSchema.shape.documents,
       about: z.unknown().optional(),
     }).parse(input);
-    const content = editorialContentSchema.parse({ ...object, about: object.about === undefined ? current.about : object.about });
+    const parsed = editorialContentSchema.parse({ ...object, about: object.about === undefined ? current.about : object.about });
+    const content = { ...parsed, about: normalizeAboutEditorialContent(parsed.about) };
     await validateArticles(directory, content.articles);
     await validateAboutContent(directory, content.about);
     return {

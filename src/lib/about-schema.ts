@@ -42,11 +42,14 @@ export const aboutDocumentSchema = z.object({
 
 export const aboutMediaSchema = z.object({
   id: identifier,
-  alt: z.string().trim().min(5).max(240),
+  alt: z.string().trim().min(1).max(500),
   caption: z.string().trim().max(500).default(""),
   status,
   mediaId: optionalIdentifier.default(""),
   bundledFile: z.string().trim().max(140).regex(/^[a-z0-9-]+\.(jpg|jpeg|png|webp)$/).or(z.literal("")).default(""),
+}).transform((media) => {
+  const caption = media.caption || media.alt;
+  return { ...media, alt: caption, caption };
 });
 
 export const boardTermSchema = z.object({

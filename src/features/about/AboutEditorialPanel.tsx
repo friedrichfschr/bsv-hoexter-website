@@ -128,7 +128,7 @@ export function AboutEditorialPanel() {
     const title = file.name.replace(/\.pdf$/i, "");
     setAbout({
       ...about,
-      documents: [...about.documents, { ...emptyDocument, id, title, date: bdk.date, effectiveFrom: bdk.date, fileName: file.name, mediaId }],
+      documents: [...about.documents, { ...emptyDocument, id, title, kind: "sonstiges", date: bdk.date, effectiveFrom: bdk.date, fileName: file.name, mediaId, status: bdk.status }],
       bdks: about.bdks.map((item, itemIndex) => itemIndex === index ? { ...item, documentIds: [...item.documentIds, id] } : item),
     });
   }
@@ -137,9 +137,10 @@ export function AboutEditorialPanel() {
     if (!about || !file) return;
     const mediaId = await upload(file);
     const id = `bdk-bild-${mediaId}`;
+    const caption = file.name.replace(/\.[^.]+$/, "");
     setAbout({
       ...about,
-      media: [...about.media, { ...emptyMedia, id, caption: file.name.replace(/\.[^.]+$/, ""), mediaId }],
+      media: [...about.media, { ...emptyMedia, id, alt: caption, caption, mediaId, status: about.bdks[index].status }],
       bdks: about.bdks.map((item, itemIndex) => itemIndex === index ? { ...item, photoIds: [...item.photoIds, id] } : item),
     });
   }
@@ -150,6 +151,13 @@ export function AboutEditorialPanel() {
 
   function updateMedia(id: string, value: AboutContent["media"][number]) {
     if (about) setAbout({ ...about, media: about.media.map((media) => media.id === id ? value : media) });
+  }
+
+  function addStatute() {
+    if (!about) return;
+    let number = about.documents.length + 1;
+    while (about.documents.some((document) => document.id === `satzung-${number}`)) number += 1;
+    setAbout({ ...about, documents: [...about.documents, { ...emptyDocument, id: `satzung-${number}`, kind: "satzung", status: "published" }] });
   }
 
   function detachBdkDocument(index: number, id: string) {
@@ -230,19 +238,16 @@ export function AboutEditorialPanel() {
     </section>
 
     <section>
-      <div className="editorial-form-heading"><h2>Satzungen</h2><button className="editorial-button editorial-button-secondary" type="button" onClick={() => setAbout({ ...about, documents: [...about.documents, { ...emptyDocument, kind: "satzung" }] })}>Satzung hinzufügen</button></div>
-      <p className="editorial-form-note">Andere PDF-Anhänge werden direkt in ihrem BDK- oder Archiveintrag verwaltet.</p>
+      <div className="editorial-form-heading"><h2>Satzungen</h2><button className="editorial-button editorial-button-secondary" type="button" onClick={addStatute}>Satzung hinzufügen</button></div>
+      <p className="editorial-form-note">Hier werden nur Satzungen verwaltet. Andere PDF-Anhänge gehören direkt zu ihrem BDK-Eintrag.</p>
       {about.documents.map((document, index) => document.kind === "satzung" ? <details key={index} className="about-editor-record">
-        <summary><span><strong>{document.title || `Satzung ${index + 1}`}</strong><small>Satzung Nr. {document.number || "–"} · {statusLabel(document.status)}</small></span></summary>
+        <summary><span><strong>{document.title || `Satzung ${index + 1}`}</strong><small>Satzung Nr. {document.number || "–"}</small></span></summary>
         <fieldset aria-label={`Dokument ${index + 1}`}><legend>Satzung {index + 1}</legend>
           <button className="editorial-button editorial-button-danger about-editor-remove" type="button" onClick={() => removeCollectionItem("documents", index)}>Dokument entfernen</button>
           <div className="editorial-form-grid">
-            <div><label><FieldLabel hint="Pflicht · Kleinbuchstaben, Zahlen, Bindestriche · max. 100">ID</FieldLabel></label><input aria-label={`ID Dokument ${index + 1}`} maxLength={100} value={document.id} pattern="[a-z0-9-]+" onChange={(event) => updateCollection("documents", index, { ...document, id: event.target.value })} required /></div>
-            <div><label><FieldLabel hint="Pflichtfeld · 3–180 Zeichen">Titel</FieldLabel></label><input aria-label={`Titel Dokument ${index + 1}`} minLength={3} maxLength={180} value={document.title} onChange={(event) => updateCollection("documents", index, { ...document, title: event.target.value })} required /></div>
-            <div><label><FieldLabel hint="Pflichtfeld">Dokumentdatum</FieldLabel></label><input aria-label={`Datum Dokument ${index + 1}`} type="date" value={document.date} onChange={(event) => updateCollection("documents", index, { ...document, date: event.target.value })} required /></div>
-            <div><label><FieldLabel hint="Optional · maximal 40 Zeichen">Nummer</FieldLabel></label><input aria-label={`Nummer Satzung ${index + 1}`} maxLength={40} value={document.number} onChange={(event) => updateCollection("documents", index, { ...document, number: event.target.value })} /></div><div><label><FieldLabel hint="Pflichtfeld">Gültig ab</FieldLabel></label><input aria-label={`Gültig ab Satzung ${index + 1}`} type="date" value={document.effectiveFrom} onChange={(event) => updateCollection("documents", index, { ...document, effectiveFrom: event.target.value })} required /></div><div><label><FieldLabel hint="Optional · leer bedeutet aktuell gültig">Gültig bis</FieldLabel></label><input aria-label={`Gültig bis Satzung ${index + 1}`} type="date" value={document.effectiveUntil} onChange={(event) => updateCollection("documents", index, { ...document, effectiveUntil: event.target.value })} /></div>
-            <div><label><FieldLabel hint="Entwurf ist nicht öffentlich sichtbar">Sichtbarkeit</FieldLabel></label><select aria-label={`Status Dokument ${index + 1}`} value={document.status} onChange={(event) => updateCollection("documents", index, { ...document, status: event.target.value as typeof document.status })}><option value="draft">Entwurf</option><option value="published">Öffentlich</option></select></div>
-            <div><label><FieldLabel hint="Pflichtfeld · maximal 180 Zeichen">Download-Dateiname</FieldLabel></label><input aria-label={`Dateiname Dokument ${index + 1}`} maxLength={180} value={document.fileName} onChange={(event) => updateCollection("documents", index, { ...document, fileName: event.target.value })} required /></div>
+            <div><label><FieldLabel hint="Pflichtfeld · 3–180 Zeichen">Titel</FieldLabel></label><input aria-label={`Titel Dokument ${index + 1}`} minLength={3} maxLength={180} value={document.title} onChange={(event) => updateCollection("documents", index, { ...document, title: event.target.value, fileName: `${event.target.value}.pdf` })} required /></div>
+            <div><label><FieldLabel hint="Optional · maximal 40 Zeichen">Nummer</FieldLabel></label><input aria-label={`Nummer Satzung ${index + 1}`} maxLength={40} value={document.number} onChange={(event) => updateCollection("documents", index, { ...document, number: event.target.value })} /></div>
+            <div><label><FieldLabel hint="Pflichtfeld">Gültig ab</FieldLabel></label><input aria-label={`Gültig ab Satzung ${index + 1}`} type="date" value={document.effectiveFrom} onChange={(event) => updateCollection("documents", index, { ...document, date: event.target.value, effectiveFrom: event.target.value })} required /></div><div><label><FieldLabel hint="Optional · leer bedeutet aktuell gültig">Gültig bis</FieldLabel></label><input aria-label={`Gültig bis Satzung ${index + 1}`} type="date" value={document.effectiveUntil} onChange={(event) => updateCollection("documents", index, { ...document, effectiveUntil: event.target.value })} /></div>
           </div>
           <label><FieldLabel hint="Genau eine PDF ist erforderlich · wird direkt dieser Satzung zugeordnet">PDF ersetzen oder hochladen</FieldLabel></label><input aria-label={`PDF Dokument ${index + 1}`} type="file" accept="application/pdf" onChange={async (event) => { try { const mediaId = await upload(event.target.files?.[0], document.mediaId); updateCollection("documents", index, { ...document, mediaId, bundledFile: mediaId ? "" : document.bundledFile }); } catch (reason) { setError(reason instanceof Error ? reason.message : "PDF konnte nicht hochgeladen werden."); } }} />
           <small>{document.bundledFile ? `Gebündelte Datei: ${document.bundledFile}` : document.mediaId ? `Upload: ${document.mediaId}` : "Noch keine Datei"}</small>
@@ -251,10 +256,12 @@ export function AboutEditorialPanel() {
     </section>
 
     <section>
-      <div className="editorial-form-heading"><h2>BDKs und Archiveinträge</h2><button className="editorial-button editorial-button-secondary" type="button" onClick={() => setAbout({ ...about, bdks: [...about.bdks, { ...emptyBdk }] })}>BDK hinzufügen</button></div>
+      <div className="editorial-form-heading"><h2>BDKs</h2><button className="editorial-button editorial-button-secondary" type="button" onClick={() => setAbout({ ...about, bdks: [...about.bdks, { ...emptyBdk }] })}>BDK hinzufügen</button></div>
+      <p className="editorial-form-note">Jeder BDK-Eintrag enthält direkt seine eigenen PDF-Anhänge, Fotos und Links.</p>
       {about.bdks.map((bdk, index) => <details key={index} className="about-editor-record">
-        <summary><span><strong>{bdk.title || `BDK ${index + 1}`}</strong><small>{bdk.founding ? "Gründung · " : ""}{statusLabel(bdk.status)}</small></span>{bdk.founding ? <mark>Gründungsbereich</mark> : null}</summary>
+        <summary><span><strong>{bdk.title || `BDK ${index + 1}`}</strong><small>{bdk.founding ? "Fest hinterlegt · nur Dokumente bearbeitbar" : statusLabel(bdk.status)}</small></span>{bdk.founding ? <mark>Gründungs-BDK</mark> : null}</summary>
         <fieldset aria-label={`BDK ${index + 1}`}><legend>BDK {index + 1}</legend>
+          {bdk.founding ? <p className="editorial-form-note">Die Gründungs-BDK und ihre Fotos sind fest hinterlegt. Hier können nur die zugehörigen Dokumente geändert werden.</p> : <>
           <button className="editorial-button editorial-button-danger about-editor-remove" type="button" onClick={() => removeCollectionItem("bdks", index)}>BDK entfernen</button>
           <div className="editorial-form-grid">
             <div><label><FieldLabel hint="Pflicht · Kleinbuchstaben, Zahlen, Bindestriche · max. 100">ID</FieldLabel></label><input aria-label={`ID BDK ${index + 1}`} maxLength={100} value={bdk.id} pattern="[a-z0-9-]+" onChange={(event) => updateCollection("bdks", index, { ...bdk, id: event.target.value })} required /></div>
@@ -264,28 +271,26 @@ export function AboutEditorialPanel() {
             <div><label><FieldLabel hint="Optional">Uhrzeit</FieldLabel></label><input aria-label={`Uhrzeit BDK ${index + 1}`} type="time" value={bdk.time} onChange={(event) => updateCollection("bdks", index, { ...bdk, time: event.target.value })} /></div>
             <div><label><FieldLabel hint="Pflichtfeld · 2–180 Zeichen">Ort</FieldLabel></label><input aria-label={`Ort BDK ${index + 1}`} minLength={2} maxLength={180} value={bdk.location} onChange={(event) => updateCollection("bdks", index, { ...bdk, location: event.target.value })} required /></div>
             <div><label><FieldLabel hint="Entwurf ist nicht öffentlich sichtbar">Sichtbarkeit</FieldLabel></label><select aria-label={`Status BDK ${index + 1}`} value={bdk.status} onChange={(event) => updateCollection("bdks", index, { ...bdk, status: event.target.value as typeof bdk.status })}><option value="draft">Entwurf</option><option value="published">Öffentlich</option></select></div>
-            <div><label><FieldLabel hint="Optional · darf nur bei einem öffentlichen Eintrag aktiv sein"><input aria-label={`Gründungs-BDK ${index + 1}`} type="checkbox" checked={bdk.founding} onChange={(event) => updateCollection("bdks", index, { ...bdk, founding: event.target.checked })} /> Gründungs-BDK</FieldLabel></label></div>
+
           </div>
           <label><FieldLabel hint="Pflichtfeld · 10–3.000 Zeichen">Zusammenfassung</FieldLabel></label><textarea aria-label={`Zusammenfassung BDK ${index + 1}`} rows={5} minLength={10} maxLength={3000} value={bdk.summary} onChange={(event) => updateCollection("bdks", index, { ...bdk, summary: event.target.value })} required />
+          </>}
           <fieldset className="about-editor-options"><legend>Anhänge direkt in diesem Eintrag</legend>
-            {bdk.documentIds.map((id, documentIndex) => { const document = about.documents.find((item) => item.id === id); return document ? <div className="about-inline-resource" key={id}>
+            {bdk.documentIds.filter((id) => about.documents.find((document) => document.id === id)?.kind !== "satzung").map((id, documentIndex) => { const document = about.documents.find((item) => item.id === id); return document ? <div className="about-inline-resource" key={id}>
               <div className="editorial-form-grid">
-                <div><label><FieldLabel hint="Pflichtfeld · 3–180 Zeichen">Titel des Anhangs</FieldLabel></label><input aria-label={`Titel Anhang ${documentIndex + 1} BDK ${index + 1}`} minLength={3} maxLength={180} value={document.title} onChange={(event) => updateDocument(id, { ...document, title: event.target.value })} required /></div>
-                <div><label><FieldLabel hint="Pflichtfeld">Art</FieldLabel></label><select aria-label={`Art Anhang ${documentIndex + 1} BDK ${index + 1}`} value={document.kind} onChange={(event) => updateDocument(id, { ...document, kind: event.target.value as typeof document.kind })}><option value="einladung">Einladung</option><option value="tagesordnung">Tagesordnung</option><option value="protokoll">Protokoll</option><option value="satzung">Satzung</option><option value="sonstiges">Sonstiges</option></select></div>
-                <div><label><FieldLabel hint="Pflichtfeld">Dokumentdatum</FieldLabel></label><input aria-label={`Datum Anhang ${documentIndex + 1} BDK ${index + 1}`} type="date" value={document.date} onChange={(event) => updateDocument(id, { ...document, date: event.target.value, effectiveFrom: document.effectiveFrom || event.target.value })} required /></div>
-                <div><label><FieldLabel hint="Muss öffentlich sein, wenn der Eintrag öffentlich ist">Sichtbarkeit</FieldLabel></label><select aria-label={`Status Anhang ${documentIndex + 1} BDK ${index + 1}`} value={document.status} onChange={(event) => updateDocument(id, { ...document, status: event.target.value as typeof document.status })}><option value="draft">Entwurf</option><option value="published">Öffentlich</option></select></div>
+                <div><label><FieldLabel hint="Pflichtfeld · 3–180 Zeichen">Titel des Anhangs</FieldLabel></label><input aria-label={`Titel Anhang ${documentIndex + 1} BDK ${index + 1}`} minLength={3} maxLength={180} value={document.title} onChange={(event) => updateDocument(id, { ...document, title: event.target.value, fileName: `${event.target.value}.pdf` })} required /></div>
+
               </div>
               <label><FieldLabel hint="PDF · ersetzt nur die Datei dieses Anhangs">PDF ersetzen</FieldLabel></label><input aria-label={`PDF Anhang ${documentIndex + 1} BDK ${index + 1}`} type="file" accept="application/pdf" onChange={async (event) => { try { const mediaId = await upload(event.target.files?.[0], document.mediaId); updateDocument(id, { ...document, mediaId, bundledFile: mediaId ? "" : document.bundledFile }); } catch (reason) { setError(reason instanceof Error ? reason.message : "PDF konnte nicht hochgeladen werden."); } }} />
-              <button className="editorial-button editorial-button-danger" type="button" onClick={() => detachBdkDocument(index, id)}>{document.kind === "satzung" ? "Satzung aus diesem Eintrag entfernen" : "Anhang löschen"}</button>
+              <button className="editorial-button editorial-button-danger" type="button" onClick={() => detachBdkDocument(index, id)}>Anhang löschen</button>
             </div> : null; })}
             <label><FieldLabel hint="PDF · wird sofort direkt diesem Eintrag zugeordnet">Neuen Anhang hochladen</FieldLabel></label><input aria-label={`Neuen Anhang BDK ${index + 1}`} type="file" accept="application/pdf" onChange={async (event) => { try { await addBdkDocument(index, event.target.files?.[0]); event.target.value = ""; } catch (reason) { setError(reason instanceof Error ? reason.message : "PDF konnte nicht hochgeladen werden."); } }} />
           </fieldset>
+          {!bdk.founding ? <>
           <fieldset className="about-editor-options"><legend>Fotos direkt in diesem Eintrag</legend>
             {bdk.photoIds.map((id, photoIndex) => { const media = about.media.find((item) => item.id === id); return media ? <div className="about-inline-resource" key={id}>
               <div className="editorial-form-grid">
-                <div><label><FieldLabel hint="Pflichtfeld · 5–240 Zeichen">Alternativtext</FieldLabel></label><input aria-label={`Alternativtext Foto ${photoIndex + 1} BDK ${index + 1}`} minLength={5} maxLength={240} value={media.alt} onChange={(event) => updateMedia(id, { ...media, alt: event.target.value })} required /></div>
-                <div><label><FieldLabel hint="Optional · maximal 500 Zeichen">Bildunterschrift</FieldLabel></label><input aria-label={`Bildunterschrift Foto ${photoIndex + 1} BDK ${index + 1}`} maxLength={500} value={media.caption} onChange={(event) => updateMedia(id, { ...media, caption: event.target.value })} /></div>
-                <div><label><FieldLabel hint="Muss öffentlich sein, wenn der Eintrag öffentlich ist">Sichtbarkeit</FieldLabel></label><select aria-label={`Status Foto ${photoIndex + 1} BDK ${index + 1}`} value={media.status} onChange={(event) => updateMedia(id, { ...media, status: event.target.value as typeof media.status })}><option value="draft">Entwurf</option><option value="published">Öffentlich</option></select></div>
+                <div><label><FieldLabel hint="Pflichtfeld · 5–240 Zeichen · wird zugleich als Alternativtext verwendet">Bildunterschrift</FieldLabel></label><input aria-label={`Bildunterschrift Foto ${photoIndex + 1} BDK ${index + 1}`} minLength={5} maxLength={240} value={media.caption} onChange={(event) => updateMedia(id, { ...media, caption: event.target.value, alt: event.target.value })} required /></div>
               </div>
               <label><FieldLabel hint="JPG, PNG oder WebP · ersetzt nur dieses Foto">Foto ersetzen</FieldLabel></label><input aria-label={`Datei Foto ${photoIndex + 1} BDK ${index + 1}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { try { const mediaId = await upload(event.target.files?.[0], media.mediaId); updateMedia(id, { ...media, mediaId, bundledFile: mediaId ? "" : media.bundledFile }); } catch (reason) { setError(reason instanceof Error ? reason.message : "Bild konnte nicht hochgeladen werden."); } }} />
               <button className="editorial-button editorial-button-danger" type="button" onClick={() => detachBdkPhoto(index, id)}>Foto löschen</button>
@@ -293,6 +298,7 @@ export function AboutEditorialPanel() {
             <label><FieldLabel hint="JPG, PNG oder WebP · wird sofort direkt diesem Eintrag zugeordnet">Neues Foto hochladen</FieldLabel></label><input aria-label={`Neues Foto BDK ${index + 1}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { try { await addBdkPhoto(index, event.target.files?.[0]); event.target.value = ""; } catch (reason) { setError(reason instanceof Error ? reason.message : "Bild konnte nicht hochgeladen werden."); } }} />
           </fieldset>
           <fieldset className="about-editor-links"><legend>Externe Links</legend>{bdk.links.map((link, linkIndex) => <div className="editorial-form-grid" key={`${link.url}-${linkIndex}`}><div><label><FieldLabel hint="Pflichtfeld · 2–120 Zeichen">Linktitel</FieldLabel></label><input aria-label={`Linktitel BDK ${index + 1} Link ${linkIndex + 1}`} minLength={2} maxLength={120} value={link.label} onChange={(event) => updateCollection("bdks", index, { ...bdk, links: bdk.links.map((item, itemIndex) => itemIndex === linkIndex ? { ...item, label: event.target.value } : item) })} required /></div><div><label><FieldLabel hint="Pflichtfeld · muss mit https:// beginnen">HTTPS-Adresse</FieldLabel></label><input aria-label={`Adresse BDK ${index + 1} Link ${linkIndex + 1}`} type="url" value={link.url} pattern="https://.*" onChange={(event) => updateCollection("bdks", index, { ...bdk, links: bdk.links.map((item, itemIndex) => itemIndex === linkIndex ? { ...item, url: event.target.value } : item) })} required /></div><button className="editorial-button editorial-button-danger" type="button" onClick={() => updateCollection("bdks", index, { ...bdk, links: bdk.links.filter((_, itemIndex) => itemIndex !== linkIndex) })}>Link entfernen</button></div>)}<button className="editorial-button editorial-button-secondary" type="button" onClick={() => updateCollection("bdks", index, { ...bdk, links: [...bdk.links, { label: "", url: "https://" }] })}>Link hinzufügen</button></fieldset>
+          </> : null}
         </fieldset>
       </details>)}
     </section>

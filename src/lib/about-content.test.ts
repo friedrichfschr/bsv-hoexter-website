@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   defaultAboutContent,
+  normalizeAboutEditorialContent,
   publishedAboutContent,
   readEditorialContent,
   updateAboutContent,
@@ -21,6 +22,30 @@ describe("dynamic About content", () => {
     expect(publicContent.currentStatute?.title).toContain("Satzung");
     expect(defaultAboutContent.activeBoardId).toBe("bezirksvorstand-2026-27");
     expect(publicContent.foundingBdk?.photoIds).toHaveLength(2);
+  });
+
+  it("keeps founding metadata and photos hardcoded while allowing document changes", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.bdks[0] = { ...content.bdks[0], title: "Manipulierter Titel", location: "Anderer Ort", photoIds: [], documentIds: ["satzung-2026"] };
+    content.media[0] = { ...content.media[0], caption: "Manipuliertes Foto", alt: "Manipuliertes Foto" };
+
+    const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
+    expect(publicContent.foundingBdk?.title).toBe(defaultAboutContent.bdks[0].title);
+    expect(publicContent.foundingBdk?.location).toBe(defaultAboutContent.bdks[0].location);
+    expect(publicContent.foundingBdk?.photoIds).toEqual(defaultAboutContent.bdks[0].photoIds);
+    expect(publicContent.foundingBdk?.documentIds).toEqual(["satzung-2026"]);
+    expect(publicContent.media.find((media) => media.id === defaultAboutContent.media[0].id)?.caption).toBe(defaultAboutContent.media[0].caption);
+  });
+
+  it("uses each photo caption as its alternative text without breaking legacy lengths", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.media.push({ id: "archivfoto", alt: "Alter Alternativtext", caption: "Gemeinsame Beratung im BDK", status: "draft", mediaId: "", bundledFile: "" });
+    content.media.push({ id: "kurzfoto", alt: "Alter Alternativtext", caption: "SV", status: "draft", mediaId: "", bundledFile: "" });
+    content.media.push({ id: "langfoto", alt: "Alter Alternativtext", caption: "L".repeat(500), status: "draft", mediaId: "", bundledFile: "" });
+    const normalized = normalizeAboutEditorialContent(content);
+    expect(normalized.media.find((media) => media.id === "archivfoto")?.alt).toBe("Gemeinsame Beratung im BDK");
+    expect(normalized.media.find((media) => media.id === "kurzfoto")?.alt).toBe("SV");
+    expect(normalized.media.find((media) => media.id === "langfoto")?.alt).toHaveLength(500);
   });
 
   it("uses the explicitly designated active Vorstand", () => {
@@ -220,27 +245,30 @@ describe("dynamic About content", () => {
     await expect(updateAboutContent(directory, about)).rejects.toThrow("PDF wurde nicht gefunden");
   });
 
-  it("rejects multiple founding BDKs", async () => {
+  it("canonicalizes a legacy second founding designation", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-relations-"));
-    await expect(updateAboutContent(directory, {
+    const normalized = await updateAboutContent(directory, {
       ...defaultAboutContent,
       bdks: [
         defaultAboutContent.bdks[0],
         { ...defaultAboutContent.bdks[0], id: "zweite-gruendung", founding: true },
       ],
-    })).rejects.toThrow("Gründungs-BDK");
+    });
+    expect(normalized.bdks.filter((bdk) => bdk.founding)).toHaveLength(1);
+    expect(normalized.bdks.find((bdk) => bdk.id === "zweite-gruendung")?.founding).toBe(false);
   });
 
 
-  it("rejects impossible board terms and draft documents on published BDKs", async () => {
+  it("rejects impossible board terms and derives document publication from the BDK", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-cross-fields-"));
     await expect(updateAboutContent(directory, {
       ...defaultAboutContent,
       boards: [{ ...defaultAboutContent.boards[0], endDate: "2026-01-01" }],
     })).rejects.toThrow("Ende der Amtszeit");
-    await expect(updateAboutContent(directory, {
+    const normalized = await updateAboutContent(directory, {
       ...defaultAboutContent,
       documents: defaultAboutContent.documents.map((document, index) => index === 0 ? { ...document, status: "draft" as const } : document),
-    })).rejects.toThrow("veröffentlichte Dokumente");
+    });
+    expect(normalized.documents[0].status).toBe("published");
   });
 });

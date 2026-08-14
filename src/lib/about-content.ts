@@ -46,6 +46,33 @@ function referencedUploadIds(about: AboutContent) {
   ].filter(Boolean));
 }
 
+export function normalizeAboutEditorialContent(about: AboutContent) {
+  const defaultFounding = defaultAboutContent.bdks.find((bdk) => bdk.founding)!;
+  const submittedFounding = about.bdks.find((bdk) => bdk.id === defaultFounding.id);
+  const hardcodedMediaIds = new Set(defaultFounding.photoIds);
+  const bdks = [
+    { ...defaultFounding, documentIds: submittedFounding?.documentIds ?? [] },
+    ...about.bdks.filter((bdk) => bdk.id !== defaultFounding.id).map((bdk) => ({ ...bdk, founding: false })),
+  ];
+  const publishedDocumentIds = new Set(bdks.filter((bdk) => bdk.status === "published").flatMap((bdk) => bdk.documentIds));
+  const publishedPhotoIds = new Set(bdks.filter((bdk) => bdk.status === "published").flatMap((bdk) => bdk.photoIds));
+  return aboutContentSchema.parse({
+    ...about,
+    bdks,
+    documents: about.documents.map((document) => ({
+      ...document,
+      status: document.kind === "satzung" || publishedDocumentIds.has(document.id) ? "published" : "draft",
+    })),
+    media: [
+      ...defaultAboutContent.media.filter((media) => hardcodedMediaIds.has(media.id)),
+      ...about.media.filter((media) => !hardcodedMediaIds.has(media.id)).map((media) => ({
+        ...media,
+        status: publishedPhotoIds.has(media.id) ? "published" : "draft",
+      })),
+    ],
+  });
+}
+
 export async function cleanupRemovedAboutUploads(directory: string, previous: AboutContent, next: AboutContent, retainedIds: Iterable<string> = []) {
   const nextIds = referencedUploadIds(next);
   for (const id of retainedIds) if (id) nextIds.add(id);
@@ -113,7 +140,7 @@ export async function validateAboutContent(directory: string, about: AboutConten
 }
 
 export async function updateAboutContent(directory = resolveEditorialDirectory(), input: unknown) {
-  const about = aboutContentSchema.parse(input);
+  const about = normalizeAboutEditorialContent(aboutContentSchema.parse(input));
   return mutateEditorialContent(directory, async (content) => {
     await validateAboutContent(directory, about);
     return {
@@ -128,7 +155,7 @@ export async function updateAboutContent(directory = resolveEditorialDirectory()
 }
 
 export function publishedAboutContent(content: EditorialContent, today = todayInBerlin()) {
-  const about = aboutContentSchema.parse(content.about ?? defaultAboutContent);
+  const about = normalizeAboutEditorialContent(aboutContentSchema.parse(content.about ?? defaultAboutContent));
   const documents = about.documents.filter((document) => document.status === "published").sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   const documentIds = new Set(documents.map((document) => document.id));
   const boards = about.boards.filter((board) => board.status === "published" && board.startDate <= today).sort((a, b) => b.startDate.localeCompare(a.startDate));

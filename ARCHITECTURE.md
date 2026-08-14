@@ -123,9 +123,13 @@ requires edge/shared abuse controls and durable consent-aware storage.
 `/ueber-uns` is backed by the `about` collection inside the serialized editorial
 repository. Its schemas and service own introductory text, Vorstand terms and
 photos, one explicit active-Vorstand reference, BDK records, statutes with legal
-validity periods/numbers, invitations, agendas, protocols, external HTTPS links,
-publication state, document references, founding galleries, and media existence
-checks. Public archive columns use bounded client disclosures so only the first
+validity periods/numbers, external HTTPS links, document references, founding
+galleries, and media existence checks. Attachment and photo publication is derived
+from the containing BDK; editors do not manage a second publication state, document
+type, or attachment date. A photo's caption is also its alternative text. The
+founding BDK metadata and photographs are source-controlled constants; Redaktion
+may change only its document attachments. Public archive columns use bounded native
+disclosures so only the first
 records render initially; Vorstand entries retain their photo/text history while
 statutes remain compact legal download rows. The initial archive is
 seeded from the supplied founding documents: the Satzung, school invitations,
