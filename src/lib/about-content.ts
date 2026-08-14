@@ -72,14 +72,7 @@ export async function validateAboutContent(directory: string, about: AboutConten
   if (!activeBoard || activeBoard.status !== "published") throw new Error("Aktiver Bezirksvorstand: Bitte genau einen veröffentlichten Vorstand auswählen.");
   const today = todayInBerlin();
   if (activeBoard.startDate > today || (activeBoard.endDate && activeBoard.endDate < today)) throw new Error("Die Amtszeit des aktiven Bezirksvorstands muss heute gültig sein.");
-  if (about.boards.filter((board) => board.status === "published" && !board.endDate).length > 1) throw new Error("Es darf nur einen aktuellen Bezirksvorstand geben.");
   if (about.bdks.filter((bdk) => bdk.status === "published" && bdk.founding).length > 1) throw new Error("Es darf nur eine Gründungs-BDK geben.");
-  const publishedBoards = about.boards.filter((board) => board.status === "published").sort((a, b) => a.startDate.localeCompare(b.startDate));
-  for (let index = 1; index < publishedBoards.length; index += 1) {
-    const previous = publishedBoards[index - 1];
-    const current = publishedBoards[index];
-    if (!previous.endDate || previous.endDate >= current.startDate) throw new Error("Veröffentlichte Amtszeiten dürfen sich nicht überschneiden.");
-  }
   for (const bdk of about.bdks) {
     if (new Set(bdk.documentIds).size !== bdk.documentIds.length) throw new Error("Ein BDK-Dokument ist mehrfach zugeordnet.");
     if (bdk.documentIds.some((id) => !documentIds.has(id))) throw new Error("Ein BDK-Dokument wurde nicht gefunden.");
@@ -141,7 +134,7 @@ export function publishedAboutContent(content: EditorialContent, today = todayIn
   const boards = about.boards.filter((board) => board.status === "published" && board.startDate <= today).sort((a, b) => b.startDate.localeCompare(a.startDate));
   const bdks = about.bdks.filter((bdk) => bdk.status === "published").map((bdk) => ({ ...bdk, documentIds: bdk.documentIds.filter((id) => documentIds.has(id)) })).sort((a, b) => b.date.localeCompare(a.date));
   const statutes = documents.filter((document) => document.kind === "satzung");
-  const currentBoard = boards.find((board) => board.id === about.activeBoardId && (!board.endDate || board.endDate >= today));
+  const currentBoard = boards.find((board) => board.id === about.activeBoardId);
   const effectiveStatutes = statutes.filter((document) => document.effectiveFrom <= today && (!document.effectiveUntil || document.effectiveUntil >= today));
   const previousStatutes = statutes.filter((document) => document.effectiveUntil && document.effectiveUntil < today);
   const foundingBdk = bdks.find((bdk) => bdk.founding && bdk.date <= today);

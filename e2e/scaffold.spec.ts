@@ -92,6 +92,8 @@ test("BDK page shows the unknown-date state and dedicated signup form", async ({
 });
 
 test("About page renders the dynamic founding archive and source files", async ({ page }) => {
+  const hydrationErrors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error" && message.text().includes("Hydration failed")) hydrationErrors.push(message.text()); });
   await page.goto("/ueber-uns");
   await expect(page.getByRole("heading", { level: 2, name: "Was wir sind" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Wofür wir stehen" })).toBeVisible();
@@ -100,7 +102,7 @@ test("About page renders the dynamic founding archive and source files", async (
   await expect(page.getByRole("heading", { level: 3, name: "Frühere Bezirksvorstände" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Frühere Satzungen" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "BDKs, Protokolle und Dateien" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "Gegründet am 02.07.2026" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Die Gründung der BSV Höxter" })).toBeVisible();
   await expect(page.getByLabel("Zeit seit der Gründung")).toBeVisible();
   await expect(page.getByRole("img", { name: "Schüler*innen arbeiten bei der Gründungs-BDK der BSV Höxter in Gesprächsgruppen." })).toBeVisible();
   await expect(page.getByRole("img", { name: "Gruppenfoto der Teilnehmenden der Gründungs-BDK der BSV Höxter." })).toBeVisible();
@@ -110,6 +112,7 @@ test("About page renders the dynamic founding archive and source files", async (
   const response = await page.request.get(await invitation.getAttribute("href") ?? "");
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toBe("application/pdf");
+  expect(hydrationErrors).toEqual([]);
 });
 
 test("phone navigation opens without client-side JavaScript", async ({ browser }, testInfo) => {

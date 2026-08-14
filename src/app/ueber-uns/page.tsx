@@ -4,6 +4,7 @@ import { publishedAboutContent } from "@/lib/about-content";
 import { readEditorialContent } from "@/lib/editorial";
 import { ExpandableArchive } from "@/features/about/ExpandableArchive";
 import { FoundingCounter } from "@/features/about/FoundingCounter";
+import { elapsedSinceFounding } from "@/lib/founding-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Über uns | BSV Höxter", description: "Aufgaben, Bezirksvorstand, Satzung und Geschichte der BSV Höxter." };
@@ -31,6 +32,8 @@ export default async function AboutPage() {
   const today = new Date().toISOString().slice(0, 10);
   const archivedBdks = about.bdks.filter((bdk) => !bdk.founding && bdk.date < today);
   const upcomingBdks = about.bdks.filter((bdk) => !bdk.founding && bdk.date >= today);
+  const foundingTime = about.foundingBdk?.time || "00:00";
+  const initialFoundingElapsed = about.foundingBdk ? elapsedSinceFounding(about.foundingBdk.date, foundingTime) : undefined;
 
   return (
     <section className="about-page shell" aria-labelledby="about-heading">
@@ -70,9 +73,7 @@ export default async function AboutPage() {
       {upcomingBdks.length ? <section className="about-upcoming-bdks" aria-labelledby="upcoming-bdks-heading"><header className="about-section-heading"><p className="news-eyebrow">Ausblick</p><h2 id="upcoming-bdks-heading">Kommende BDKs</h2></header>{upcomingBdks.map((bdk) => <article key={bdk.id}><h3>{bdk.title}</h3>{bdk.subtitle ? <p>{bdk.subtitle}</p> : null}<p>{bdk.summary}</p><p><strong>{formatDate(bdk.date)}</strong> · {bdk.location}</p></article>)}</section> : null}
 
       {about.foundingBdk ? <section className="about-founding" aria-labelledby="founding-heading">
-        <FoundingCounter date={about.foundingBdk.date} time={about.foundingBdk.time || "00:00"} />
-        {!about.foundingBdk.time ? <p className="about-founding-time-note">Die genaue Gründungsuhrzeit ist noch nicht hinterlegt; der Zähler beginnt derzeit am Gründungstag um 00:00 Uhr.</p> : null}
-        <div className="about-founding-copy"><p className="news-eyebrow">Unsere Gründung</p><h2 id="founding-heading">Gegründet am {formatDate(about.foundingBdk.date)}</h2>{about.foundingBdk.subtitle ? <p className="about-founding-subtitle">{about.foundingBdk.subtitle}</p> : null}<p>{about.foundingBdk.summary}</p><p><strong>Ort:</strong> {about.foundingBdk.location}</p></div>
+        <div className="about-founding-copy"><p className="news-eyebrow">Unsere Gründung</p><h2 id="founding-heading">Die Gründung der BSV Höxter</h2><FoundingCounter date={about.foundingBdk.date} time={foundingTime} initialElapsed={initialFoundingElapsed!} />{about.foundingBdk.subtitle ? <p className="about-founding-subtitle">{about.foundingBdk.subtitle}</p> : null}<p>{about.foundingBdk.summary}</p></div>
         <div className="about-founding-gallery">{about.foundingBdk.photoIds.map((id) => { const media = mediaById.get(id); return media ? <figure key={id}><div><Image src={mediaHref(media.id)} fill sizes="(max-width: 780px) 100vw, 50vw" alt={media.alt} /></div>{media.caption ? <figcaption>{media.caption}</figcaption> : null}</figure> : null; })}</div>
         <div className="about-founding-resources"><h3>Dokumente und weiterführende Links</h3><div className="about-founding-files">{about.foundingBdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{about.foundingBdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</div></div>
       </section> : null}

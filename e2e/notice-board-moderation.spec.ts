@@ -53,11 +53,15 @@ test("admin can edit About and BDK records", async ({ page }, testInfo) => {
   await expect(page.getByRole("heading", { level: 1, name: "Über uns verwalten" })).toBeVisible();
   await expect(page.getByLabel("Aktiver Bezirksvorstand")).toHaveValue("bezirksvorstand-2026-27");
   await expect(page.getByText("Aktiver Vorstand", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bildergalerie" })).toHaveCount(0);
   await expect(page.locator("details.about-editor-record").first()).not.toHaveAttribute("open", "");
   await page.getByLabel("Was wir sind").fill("Die BSV Höxter ist die gemeinsame demokratische Stimme der Schülervertretungen im Kreis Höxter.");
   await page.getByRole("button", { name: "BDK hinzufügen" }).click();
   await page.locator("details.about-editor-record").filter({ hasText: "BDK 2" }).locator("summary").click();
   const newestBdk = page.getByRole("group", { name: "BDK 2" });
+  await expect(newestBdk.getByLabel("Neuen Anhang BDK 2")).toBeVisible();
+  await expect(newestBdk.getByLabel("Neues Foto BDK 2")).toBeVisible();
+  await expect(newestBdk.getByText("Pflichtfeld · 10–3.000 Zeichen")).toBeVisible();
   await newestBdk.getByLabel("ID BDK 2").fill("test-bdk-2099");
   await newestBdk.getByLabel("Titel BDK 2", { exact: true }).fill("Test-BDK 2099");
   await newestBdk.getByLabel("Datum BDK 2").fill("2099-10-01");

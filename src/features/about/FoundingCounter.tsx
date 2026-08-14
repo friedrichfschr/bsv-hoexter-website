@@ -4,16 +4,25 @@ import { useEffect, useState } from "react";
 import { elapsedSinceFounding, type FoundingElapsed } from "@/lib/founding-time";
 
 const units: Array<[keyof FoundingElapsed, string, string]> = [
-  ["years", "Jahr", "Jahre"],
-  ["months", "Monat", "Monate"],
-  ["days", "Tag", "Tage"],
+  ["years", "Jahr", "Jahren"],
+  ["months", "Monat", "Monaten"],
+  ["days", "Tag", "Tagen"],
   ["hours", "Stunde", "Stunden"],
   ["minutes", "Minute", "Minuten"],
   ["seconds", "Sekunde", "Sekunden"],
 ];
 
-export function FoundingCounter({ date, time }: { date: string; time: string }) {
-  const [elapsed, setElapsed] = useState<FoundingElapsed>();
+export function foundingSentence(elapsed: FoundingElapsed) {
+  const parts = units
+    .filter(([key]) => elapsed[key] !== 0)
+    .map(([key, singular, plural]) => `${elapsed[key]} ${elapsed[key] === 1 ? singular : plural}`);
+  if (!parts.length) parts.push("0 Sekunden");
+  const duration = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} und ${parts.at(-1)}`;
+  return `Vor ${duration} wurde die BSV Höxter in Brakel gegründet.`;
+}
+
+export function FoundingCounter({ date, time, initialElapsed }: { date: string; time: string; initialElapsed: FoundingElapsed }) {
+  const [elapsed, setElapsed] = useState(initialElapsed);
 
   useEffect(() => {
     const update = () => setElapsed(elapsedSinceFounding(date, time));
@@ -22,8 +31,7 @@ export function FoundingCounter({ date, time }: { date: string; time: string }) 
     return () => window.clearInterval(timer);
   }, [date, time]);
 
-  return <div className="about-founding-counter" aria-label="Zeit seit der Gründung" aria-live="off">
-    <p>Seit unserer Gründung</p>
-    {elapsed ? <div className="about-founding-counter-grid">{units.map(([key, singular, plural]) => <span key={key}><strong>{elapsed[key]}</strong><small>{elapsed[key] === 1 ? singular : plural}</small></span>)}</div> : <p><time dateTime={`${date}T${time}`}>{date.split("-").reverse().join(".")}</time></p>}
-  </div>;
+  return <p className="about-founding-counter" aria-label="Zeit seit der Gründung" aria-live="off">
+    {foundingSentence(elapsed)}
+  </p>;
 }

@@ -39,6 +39,17 @@ describe("dynamic About content", () => {
     expect(publicContent.previousBoards.map((board) => board.id)).toContain("bezirksvorstand-2025-26");
   });
 
+  it("archives every other published Vorstand independently of its status", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-multiple-published-"));
+    const content = structuredClone(defaultAboutContent);
+    content.boards.push({ ...content.boards[0], id: "vorstand-archiv", term: "Archiv", startDate: "2025-01-01", endDate: "" });
+
+    await expect(updateAboutContent(directory, content)).resolves.toMatchObject({ activeBoardId: content.activeBoardId });
+    const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
+    expect(publicContent.currentBoard?.id).toBe(content.activeBoardId);
+    expect(publicContent.previousBoards.map((board) => board.id)).toContain("vorstand-archiv");
+  });
+
   it("rejects an unknown active Vorstand reference", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-active-"));
     await expect(updateAboutContent(directory, {
@@ -209,15 +220,8 @@ describe("dynamic About content", () => {
     await expect(updateAboutContent(directory, about)).rejects.toThrow("PDF wurde nicht gefunden");
   });
 
-  it("rejects ambiguous public archive relationships", async () => {
+  it("rejects multiple founding BDKs", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-relations-"));
-    await expect(updateAboutContent(directory, {
-      ...defaultAboutContent,
-      boards: [
-        defaultAboutContent.boards[0],
-        { ...defaultAboutContent.boards[0], id: "zweiter-aktueller-vorstand", term: "2027/28", startDate: "2027-07-01" },
-      ],
-    })).rejects.toThrow("aktuellen Bezirksvorstand");
     await expect(updateAboutContent(directory, {
       ...defaultAboutContent,
       bdks: [
@@ -227,16 +231,6 @@ describe("dynamic About content", () => {
     })).rejects.toThrow("Gründungs-BDK");
   });
 
-  it("rejects overlapping published board terms", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-overlap-"));
-    await expect(updateAboutContent(directory, {
-      ...defaultAboutContent,
-      boards: [
-        { ...defaultAboutContent.boards[0], endDate: "2027-08-01" },
-        { ...defaultAboutContent.boards[0], id: "vorstand-2027-28", term: "2027/28", startDate: "2027-07-01", endDate: "2028-07-01" },
-      ],
-    })).rejects.toThrow("überschneiden");
-  });
 
   it("rejects impossible board terms and draft documents on published BDKs", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-cross-fields-"));
