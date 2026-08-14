@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import type { AboutContent } from "@/lib/about-schema";
 
-const emptyBoard: AboutContent["boards"][number] = { id: "", term: "", startDate: "", endDate: "", message: "", photoId: "", photoAlt: "", status: "published" };
+const emptyBoard: AboutContent["boards"][number] = { id: "", term: "", startDate: "", endDate: "", message: "", photoId: "", photoAlt: "", photos: [], status: "published" };
 const emptyBdk: AboutContent["bdks"][number] = { id: "", title: "", subtitle: "", date: "", time: "", location: "", summary: "", documentIds: [], photoIds: [], links: [], status: "published", founding: false };
 const emptyDocument: AboutContent["documents"][number] = { id: "", title: "", kind: "sonstiges", date: "", number: "", effectiveFrom: "", effectiveUntil: "", status: "published", mediaId: "", bundledFile: "", fileName: "" };
 
@@ -13,6 +13,10 @@ type Collection = "boards" | "bdks" | "documents" | "media";
 
 function FieldLabel({ children, hint }: { children: ReactNode; hint: string }) {
   return <span className="about-field-label"><span>{children}</span><small>{hint}</small></span>;
+}
+
+function withBoardPhotos(board: AboutContent["boards"][number], photos: AboutContent["boards"][number]["photos"]) {
+  return { ...board, photos, photoId: photos[0]?.id ?? "", photoAlt: photos[0]?.alt ?? "" };
 }
 
 export function AboutEditorialPanel() {
@@ -79,7 +83,7 @@ export function AboutEditorialPanel() {
     }
     if (collection === "boards") {
       const board = item as AboutContent["boards"][number];
-      void discardPending(board.photoId);
+      for (const photo of board.photos) void discardPending(photo.id);
       setAbout({ ...about, activeBoardId: about.activeBoardId === board.id ? "" : about.activeBoardId, boards: about.boards.filter((_, itemIndex) => itemIndex !== index) });
     }
     if (collection === "bdks") {
@@ -115,6 +119,36 @@ export function AboutEditorialPanel() {
     await discardPending(replacedId);
     pendingUploads.current.add(result.id as string);
     return result.id as string;
+  }
+
+  async function addBoardPhotos(index: number, files: File[]) {
+    if (!about || !files.length) return;
+    if (about.boards[index].photos.length + files.length > 20) throw new Error("Pro Vorstand sind höchstens 20 Fotos möglich.");
+    const uploaded: string[] = [];
+    try {
+      for (const file of files) uploaded.push(await upload(file));
+    } catch (reason) {
+      for (const id of uploaded) await discardPending(id);
+      throw reason;
+    }
+    const board = about.boards[index];
+    const photos = [...board.photos, ...uploaded.map((id) => ({ id, alt: "" }))];
+    updateCollection("boards", index, withBoardPhotos(board, photos));
+  }
+
+  async function replaceBoardPhoto(boardIndex: number, photoIndex: number, file: File | undefined) {
+    if (!about || !file) return;
+    const board = about.boards[boardIndex];
+    const photos = [...board.photos];
+    photos[photoIndex] = { ...photos[photoIndex], id: await upload(file, photos[photoIndex].id) };
+    updateCollection("boards", boardIndex, withBoardPhotos(board, photos));
+  }
+
+  function removeBoardPhoto(boardIndex: number, photoIndex: number) {
+    if (!about) return;
+    const board = about.boards[boardIndex];
+    void discardPending(board.photos[photoIndex].id);
+    updateCollection("boards", boardIndex, withBoardPhotos(board, board.photos.filter((_, index) => index !== photoIndex)));
   }
 
   async function addBdkDocument(index: number, file: File | undefined) {
@@ -201,9 +235,15 @@ export function AboutEditorialPanel() {
 
           </div>
           <label><FieldLabel hint="Optional · maximal 12.000 Zeichen">Text des Bezirksvorstands</FieldLabel></label><textarea aria-label={`Text Vorstand ${index + 1}`} rows={6} maxLength={12000} value={board.message} onChange={(event) => updateCollection("boards", index, { ...board, message: event.target.value })} />
-          <label><FieldLabel hint="Optional · JPG, PNG oder WebP · direkt diesem Vorstand zugeordnet">Vorstandsfoto</FieldLabel></label><input aria-label={`Foto Vorstand ${index + 1}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { try { const photoId = await upload(event.target.files?.[0], board.photoId); updateCollection("boards", index, { ...board, photoId }); } catch (reason) { setError(reason instanceof Error ? reason.message : "Foto konnte nicht hochgeladen werden."); } }} />
-          {board.photoId ? <small>Gespeichertes Foto: {board.photoId}</small> : null}
-          <label><FieldLabel hint="Pflicht, sobald ein öffentliches Foto vorhanden ist · max. 240 Zeichen">Alternativtext</FieldLabel></label><input aria-label={`Alternativtext Vorstand ${index + 1}`} maxLength={240} value={board.photoAlt} onChange={(event) => updateCollection("boards", index, { ...board, photoAlt: event.target.value })} />
+          <fieldset className="about-editor-options"><legend>Fotos</legend>
+            {board.photos.map((photo, photoIndex) => <div className="about-inline-resource" key={`${photo.id}-${photoIndex}`}>
+              <small>Gespeichertes Foto: {photo.id}</small>
+              <label><FieldLabel hint="Optional · JPG, PNG oder WebP · ersetzt nur dieses Foto">Foto ersetzen</FieldLabel></label><input aria-label={`Foto ${photoIndex + 1} Vorstand ${index + 1} ersetzen`} type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { try { await replaceBoardPhoto(index, photoIndex, event.target.files?.[0]); event.target.value = ""; } catch (reason) { setError(reason instanceof Error ? reason.message : "Foto konnte nicht hochgeladen werden."); } }} />
+              <label><FieldLabel hint="Pflichtfeld · beschreibt den Bildinhalt · max. 240 Zeichen">Alternativtext</FieldLabel></label><input aria-label={`Alternativtext Foto ${photoIndex + 1} Vorstand ${index + 1}`} maxLength={240} value={photo.alt} onChange={(event) => { const photos = board.photos.map((item, itemIndex) => itemIndex === photoIndex ? { ...item, alt: event.target.value } : item); updateCollection("boards", index, withBoardPhotos(board, photos)); }} required />
+              <button className="editorial-button editorial-button-danger" type="button" aria-label={`Foto entfernen: Foto ${photoIndex + 1} Vorstand ${index + 1}`} onClick={() => removeBoardPhoto(index, photoIndex)}>Foto entfernen</button>
+            </div>)}
+            <label><FieldLabel hint="Optional · bis zu 20 JPG-, PNG- oder WebP-Dateien · direkt diesem Vorstand zugeordnet">Fotos hinzufügen</FieldLabel></label><input aria-label={`Fotos Vorstand ${index + 1}`} type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={async (event) => { try { await addBoardPhotos(index, Array.from(event.target.files ?? [])); event.target.value = ""; } catch (reason) { setError(reason instanceof Error ? reason.message : "Fotos konnten nicht hochgeladen werden."); } }} />
+          </fieldset>
         </fieldset>
       </details>)}
     </section>

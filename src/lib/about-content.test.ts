@@ -45,6 +45,31 @@ describe("dynamic About content", () => {
     expect(normalized.media.every((media) => media.alt === media.caption)).toBe(true);
   });
 
+  it("keeps multiple Vorstand photos and migrates the legacy single photo", () => {
+    const multiple = normalizeAboutEditorialContent({
+      ...defaultAboutContent,
+      boards: [{
+        ...defaultAboutContent.boards[0],
+        photos: [
+          { id: "vorstand-gruppe", alt: "Der Bezirksvorstand" },
+          { id: "landesdelegierte", alt: "Die Landesdelegierten" },
+        ],
+      }],
+    });
+    expect(multiple.boards[0]).toMatchObject({
+      photos: [
+        { id: "vorstand-gruppe", alt: "Der Bezirksvorstand" },
+        { id: "landesdelegierte", alt: "Die Landesdelegierten" },
+      ],
+    });
+
+    const legacy = normalizeAboutEditorialContent({
+      ...defaultAboutContent,
+      boards: [{ ...defaultAboutContent.boards[0], photoId: "altes-vorstandsfoto", photoAlt: "Alter Bezirksvorstand" }],
+    });
+    expect(legacy.boards[0]).toMatchObject({ photos: [{ id: "altes-vorstandsfoto", alt: "Alter Bezirksvorstand" }] });
+  });
+
   it("uses the explicitly designated active Vorstand", () => {
     const content = structuredClone(defaultAboutContent);
     content.boards.unshift({
@@ -173,6 +198,7 @@ describe("dynamic About content", () => {
       message: "Dieser Text ist noch nicht freigegeben.",
       photoId: "",
       photoAlt: "",
+      photos: [],
       status: "draft",
     });
     content.bdks.push({
@@ -260,6 +286,28 @@ describe("dynamic About content", () => {
     })).rejects.toThrow("Vorstandsfoto");
   });
 
+  it("validates every Vorstand photo payload", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-multi-photo-payload-"));
+    const first = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "vorstand.png", { type: "image/png" }));
+    const missing = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "landesdelegierte.png", { type: "image/png" }));
+    await unlink(path.join(directory, "media", missing.storedName));
+
+    await expect(updateAboutContent(directory, {
+      ...defaultAboutContent,
+      boards: [{
+        ...defaultAboutContent.boards[0],
+        photos: [
+          { id: first.id, alt: "Der Bezirksvorstand" },
+          { id: missing.id, alt: "Die Landesdelegierten" },
+        ],
+      }],
+    })).rejects.toThrow("Vorstandsfoto");
+  });
+
   it("removes a replaced About upload after the content write", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-cleanup-"));
     const upload = await storeUpload(path.join(directory, "media"), new File([
@@ -271,6 +319,25 @@ describe("dynamic About content", () => {
     });
     await updateAboutContent(directory, defaultAboutContent);
     await expect(access(path.join(directory, "media", upload.storedName))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("removes only Vorstand photos no longer referenced", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-multi-photo-cleanup-"));
+    const first = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "vorstand.png", { type: "image/png" }));
+    const second = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "landesdelegierte.png", { type: "image/png" }));
+    const photos = [
+      { id: first.id, alt: "Der Bezirksvorstand" },
+      { id: second.id, alt: "Die Landesdelegierten" },
+    ];
+    await updateAboutContent(directory, { ...defaultAboutContent, boards: [{ ...defaultAboutContent.boards[0], photos }] });
+    await updateAboutContent(directory, { ...defaultAboutContent, boards: [{ ...defaultAboutContent.boards[0], photos: photos.slice(0, 1) }] });
+
+    await expect(access(path.join(directory, "media", first.storedName))).resolves.toBeUndefined();
+    await expect(access(path.join(directory, "media", second.storedName))).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("removes replaced About uploads through the legacy workspace", async () => {

@@ -52,6 +52,11 @@ export const aboutMediaSchema = z.object({
   return { ...media, alt: caption, caption };
 });
 
+const boardPhotoSchema = z.object({
+  id: identifier,
+  alt: z.string().trim().max(240),
+});
+
 export const boardTermSchema = z.object({
   id: identifier,
   term: z.string().trim().min(4).max(40),
@@ -60,7 +65,11 @@ export const boardTermSchema = z.object({
   message: z.string().trim().max(12_000).default(""),
   photoId: optionalIdentifier.default(""),
   photoAlt: z.string().trim().max(240).default(""),
+  photos: z.array(boardPhotoSchema).max(20).default([]),
   status,
+}).transform((board) => {
+  const photos = board.photos.length ? board.photos : board.photoId ? [{ id: board.photoId, alt: board.photoAlt }] : [];
+  return { ...board, photos, photoId: photos[0]?.id ?? "", photoAlt: photos[0]?.alt ?? "" };
 });
 
 export const bdkRecordSchema = z.object({
@@ -99,7 +108,7 @@ export const defaultAboutContent = aboutContentSchema.parse({
   intro: "Die Bezirksschüler*innenvertretung Höxter ist der Zusammenschluss der Schüler*innenvertretungen aller weiterführenden Schulen im Kreis Höxter. Sie vertritt die gemeinsamen Interessen der Schüler*innen gegenüber Politik, Öffentlichkeit und der Landesschüler*innenvertretung NRW.",
   values: "Wir stehen für demokratische Mitbestimmung, gleichberechtigte Beteiligung und eine enge Zusammenarbeit der Schülervertretungen. Politische, soziale, fachliche, kulturelle und materielle Interessen der Schüler*innen sollen gehört und gemeinsam vertreten werden.",
   activeBoardId: "bezirksvorstand-2026-27",
-  boards: [{ id: "bezirksvorstand-2026-27", term: "2026/27", startDate: "2026-07-02", endDate: "", message: "", photoId: "", photoAlt: "", status: "published" }],
+  boards: [{ id: "bezirksvorstand-2026-27", term: "2026/27", startDate: "2026-07-02", endDate: "", message: "", photoId: "", photoAlt: "", photos: [], status: "published" }],
   media: [
     { id: "gruendungs-bdk-konferenz-2026", alt: "Schüler*innen arbeiten bei der Gründungs-BDK der BSV Höxter in Gesprächsgruppen.", caption: "Arbeitsphase bei der Gründungs-BDK am 2. Juli 2026.", status: "published", bundledFile: "gruendungs-bdk-konferenz-2026.jpg" },
     { id: "gruendungs-bdk-gruppenfoto-2026", alt: "Gruppenfoto der Teilnehmenden der Gründungs-BDK der BSV Höxter.", caption: "Die Teilnehmenden der ersten Bezirksdelegiertenkonferenz.", status: "published", bundledFile: "gruendungs-bdk-gruppenfoto-2026.jpg" },

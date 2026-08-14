@@ -47,4 +47,25 @@ describe("AboutEditorialPanel", () => {
     expect(within(bdk).queryByLabelText("Neues Foto BDK 2")).toBeNull();
     expect(within(bdk).getByLabelText("Neuen Anhang BDK 2").closest("fieldset")).toHaveClass("about-editor-options-compact");
   });
+
+  it("edits multiple photos inside a Vorstand record", async () => {
+    const about = structuredClone(defaultAboutContent);
+    about.boards[0] = {
+      ...about.boards[0],
+      photos: [
+        { id: "vorstand-gruppe", alt: "Der Bezirksvorstand" },
+        { id: "landesdelegierte", alt: "Die Landesdelegierten" },
+      ],
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ about }) }));
+    render(<AboutEditorialPanel />);
+    await screen.findByLabelText("Aktiver Bezirksvorstand");
+
+    fireEvent.click(screen.getByText(/Beginn: 2026-07-02/).closest("summary")!);
+    const board = screen.getByRole("group", { name: "Vorstand 1" });
+    expect(within(board).getByLabelText("Fotos Vorstand 1")).toHaveAttribute("multiple");
+    expect(within(board).getByLabelText("Alternativtext Foto 1 Vorstand 1")).toHaveValue("Der Bezirksvorstand");
+    expect(within(board).getByLabelText("Alternativtext Foto 2 Vorstand 1")).toHaveValue("Die Landesdelegierten");
+    expect(within(board).getAllByRole("button", { name: /Foto entfernen/ })).toHaveLength(2);
+  });
 });

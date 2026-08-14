@@ -2,6 +2,9 @@ import { expect, request as playwrightRequest, test } from "@playwright/test";
 
 const editorialKey = "e2e-editorial-key";
 const tinyPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+const tinyPdf = Buffer.from("%PDF-1.4\n%%EOF", "ascii");
+const longBdkSummary = "Ein ausführlicher E2E-Rückblick auf die Bezirksdelegiertenkonferenz mit Beratungen, Beschlüssen und Ergebnissen für die Schüler*innenvertretungen im Kreis Höxter. ".repeat(3);
+const longBoardMessage = "Der Bezirksvorstand und die Landesdelegierten berichten ausführlich über ihre Arbeit, Gespräche und gemeinsamen Vorhaben im Kreis Höxter. ".repeat(3);
 
 test("admin edits and approves an event submission", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Moderation mutation is covered once; mobile rendering is covered by accessibility and visual checks.");
@@ -44,7 +47,7 @@ test("admin edits and approves an event submission", async ({ page }, testInfo) 
   await api.dispose();
 });
 
-test("admin can edit About and BDK records", async ({ page }, testInfo) => {
+test("admin can edit About and BDK records", async ({ page, browser }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Editorial mutation is covered once.");
   await page.goto("/redaktion");
   await page.getByLabel("Redaktionsschlüssel").fill(editorialKey);
@@ -54,6 +57,17 @@ test("admin can edit About and BDK records", async ({ page }, testInfo) => {
   await expect(page.getByLabel("Aktiver Bezirksvorstand")).toHaveValue("bezirksvorstand-2026-27");
   await expect(page.getByText("Aktiver Vorstand", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bildergalerie" })).toHaveCount(0);
+  const activeBoardDetails = page.locator("details.about-editor-record").filter({ hasText: "2026/27" });
+  await activeBoardDetails.locator("summary").click();
+  const activeBoard = page.getByRole("group", { name: "Vorstand 1" });
+  await activeBoard.getByLabel("Text Vorstand 1").fill(longBoardMessage);
+  await activeBoard.getByLabel("Fotos Vorstand 1").setInputFiles([
+    { name: "vorstand.png", mimeType: "image/png", buffer: tinyPng },
+    { name: "landesdelegierte.png", mimeType: "image/png", buffer: tinyPng },
+  ]);
+  await activeBoard.getByLabel("Alternativtext Foto 1 Vorstand 1").fill("Der aktuelle Bezirksvorstand");
+  await activeBoard.getByLabel("Alternativtext Foto 2 Vorstand 1").fill("Die Landesdelegierten");
+  await activeBoardDetails.locator("summary").click();
   await page.locator("details.about-editor-record").filter({ hasText: "Gründungs-BDK" }).locator("summary").click();
   const foundingBdk = page.getByRole("group", { name: "BDK 1" });
   await expect(foundingBdk.getByLabel("Neuen Anhang BDK 1")).toBeVisible();
@@ -68,15 +82,66 @@ test("admin can edit About and BDK records", async ({ page }, testInfo) => {
   await expect(newestBdk.getByLabel("Neues Foto BDK 2")).toHaveCount(0);
   await expect(newestBdk.getByLabel("Status BDK 2")).toHaveCount(0);
   await expect(newestBdk.getByText("Pflichtfeld · 10–3.000 Zeichen")).toBeVisible();
-  await newestBdk.getByLabel("ID BDK 2").fill("test-bdk-2099");
-  await newestBdk.getByLabel("Titel BDK 2", { exact: true }).fill("Test-BDK 2099");
-  await newestBdk.getByLabel("Datum BDK 2").fill("2099-10-01");
+  await newestBdk.getByLabel("ID BDK 2").fill("test-bdk-2025");
+  await newestBdk.getByLabel("Titel BDK 2", { exact: true }).fill("Test-BDK 2025");
+  await newestBdk.getByLabel("Datum BDK 2").fill("2025-10-01");
 
-  await newestBdk.getByLabel("Zusammenfassung BDK 2").fill("Ein veröffentlichter Testdatensatz für das dynamische BDK-Archiv.");
+  await newestBdk.getByLabel("Zusammenfassung BDK 2").fill(longBdkSummary);
+  await newestBdk.getByLabel("Neuen Anhang BDK 2").setInputFiles({ name: "protokoll.pdf", mimeType: "application/pdf", buffer: tinyPdf });
+  await newestBdk.getByLabel("Titel Anhang 1 BDK 2").fill("Protokoll der BDK");
+  await newestBdk.getByRole("button", { name: "Link hinzufügen" }).click();
+  await newestBdk.getByLabel("Linktitel BDK 2 Link 1").fill("Beschlüsse der BDK");
+  await newestBdk.getByLabel("Adresse BDK 2 Link 1").fill("https://example.org/bdk-beschluesse");
   await page.getByRole("button", { name: "Alle Über-uns-Inhalte speichern" }).click();
   await expect(page.getByRole("status")).toHaveText("Über-uns-Inhalte gespeichert.");
   await page.goto("/ueber-uns");
-  await expect(page.getByText("Test-BDK 2099", { exact: true })).toBeVisible();
+  const bdkCard = page.locator(".about-bdk-archive-card").filter({ hasText: "Test-BDK 2025" });
+  await expect(bdkCard.locator("strong", { hasText: "Test-BDK 2025" })).toBeVisible();
+  await expect(bdkCard.locator("p").first()).toContainText("Ein ausführlicher E2E-Rückblick");
+  const readMore = bdkCard.getByRole("button", { name: "Mehr lesen: Test-BDK 2025" });
+  await readMore.click();
+  const bdkDialog = page.getByRole("dialog", { name: "Test-BDK 2025" });
+  await expect(bdkDialog.getByText(longBdkSummary.trim(), { exact: true })).toBeVisible();
+  await expect(bdkDialog.getByRole("link", { name: "Protokoll der BDK" })).toBeVisible();
+  await expect(bdkDialog.getByRole("link", { name: "Beschlüsse der BDK" })).toHaveAttribute("href", "https://example.org/bdk-beschluesse");
+  await page.keyboard.press("Escape");
+  await expect(bdkDialog).not.toBeVisible();
+  await expect(readMore).toBeFocused();
+
+  const carousel = page.getByRole("region", { name: "Bilder Vorstand 2026/27" });
+  const previousPhoto = carousel.getByRole("button", { name: "Vorheriges Bild" });
+  const nextPhoto = carousel.getByRole("button", { name: "Nächstes Bild" });
+  await expect(previousPhoto).toBeDisabled();
+  await expect(carousel.getByRole("img", { name: "Der aktuelle Bezirksvorstand" })).toBeVisible();
+  await nextPhoto.click();
+  await expect(carousel.getByRole("img", { name: "Die Landesdelegierten" })).toBeVisible();
+  await expect(nextPhoto).toBeDisabled();
+
+  const boardReadMore = page.getByRole("button", { name: "Mehr lesen: Vorstand 2026/27" });
+  await boardReadMore.click();
+  const boardDialog = page.getByRole("dialog", { name: "Vorstand 2026/27" });
+  await expect(boardDialog.getByRole("region", { name: "Bilder Vorstand 2026/27 im Dialog" })).toBeVisible();
+  const dialogBox = await boardDialog.boundingBox();
+  const viewport = page.viewportSize();
+  expect(dialogBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(Math.abs((dialogBox!.x + dialogBox!.width / 2) - viewport!.width / 2)).toBeLessThan(3);
+  expect(Math.abs((dialogBox!.y + dialogBox!.height / 2) - viewport!.height / 2)).toBeLessThan(3);
+
+  const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const mobilePage = await mobileContext.newPage();
+  await mobilePage.goto("/ueber-uns");
+  const mobileCarousel = mobilePage.getByRole("region", { name: "Bilder Vorstand 2026/27" });
+  await mobileCarousel.getByRole("button", { name: "Nächstes Bild" }).tap();
+  await expect(mobileCarousel.getByRole("img", { name: "Die Landesdelegierten" })).toBeVisible();
+  await mobilePage.getByRole("button", { name: "Mehr lesen: Vorstand 2026/27" }).tap();
+  const mobileDialog = mobilePage.getByRole("dialog", { name: "Vorstand 2026/27" });
+  await expect(mobileDialog).toBeVisible();
+  const mobileDialogBox = await mobileDialog.boundingBox();
+  expect(mobileDialogBox).not.toBeNull();
+  expect(Math.abs((mobileDialogBox!.x + mobileDialogBox!.width / 2) - 195)).toBeLessThan(3);
+  expect(await mobilePage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await mobileContext.close();
 });
 
 test("admin places, resizes, and approves a poster", async ({ page }, testInfo) => {

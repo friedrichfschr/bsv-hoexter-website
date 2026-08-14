@@ -136,10 +136,14 @@ The public founding lead emphasizes a live elapsed-time heading between subordin
 founding context lines and descriptive copy on the left, with document buttons on
 the right, followed by the fixed gallery.
 Public archive columns use bounded native disclosures so only the first
-records render initially; Vorstand entries retain their photo/text history while
-statutes remain compact legal download rows. The initial archive is
-seeded from the supplied founding documents: the Satzung, school invitations,
-and agenda for the first BDK on 2 July 2026 at the Schulen der Brede in Brakel.
+records render initially; Vorstand entries retain ordered photo collections and text
+history while statutes remain compact legal download rows. The active Vorstand uses
+a finite arrow/dot carousel without wraparound. Vorstand messages and ordinary BDK
+summaries render compact previews, with long entries available in a centred labelled
+native modal that includes the entry's photos, documents, and external links and
+supports Escape closure and focus restoration. Satzungen are independent
+About documents; the founding BDK is seeded only with its school invitations and
+agenda from 2 July 2026 at the Schulen der Brede in Brakel.
 The source PDFs are bundled outside the public directory under
 `content/about-documents/` and served only through the publication-aware document
 route; subsequent PDFs and Vorstand photos use validated private uploads and

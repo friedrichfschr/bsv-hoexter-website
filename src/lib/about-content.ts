@@ -40,7 +40,7 @@ async function fileExists(filePath: string) {
 
 function referencedUploadIds(about: AboutContent) {
   return new Set([
-    ...about.boards.map((board) => board.photoId),
+    ...about.boards.flatMap((board) => board.photos.map((photo) => photo.id)),
     ...about.documents.map((document) => document.mediaId),
     ...about.media.map((media) => media.mediaId),
   ].filter(Boolean));
@@ -118,6 +118,7 @@ export async function validateAboutContent(directory: string, about: AboutConten
   const publishedMediaIds = new Set(about.media.filter((media) => media.status === "published").map((media) => media.id));
   for (const board of about.boards) {
     if (board.endDate && board.endDate < board.startDate) throw new Error("Das Ende der Amtszeit darf nicht vor ihrem Beginn liegen.");
+    if (new Set(board.photos.map((photo) => photo.id)).size !== board.photos.length) throw new Error("Ein Vorstandsfoto ist mehrfach zugeordnet.");
   }
   const activeBoard = about.boards.find((board) => board.id === about.activeBoardId);
   if (!activeBoard) throw new Error("Aktiver Bezirksvorstand: Bitte genau einen vorhandenen Vorstand auswählen.");
@@ -157,10 +158,11 @@ export async function validateAboutContent(directory: string, about: AboutConten
     }
   }
   for (const board of about.boards) {
-    if (!board.photoId) continue;
-    const upload = await readStoredUpload(path.join(directory, "media"), board.photoId);
-    if (!upload || !upload.mediaType.startsWith("image/") || !(await uploadPayloadExists(path.join(directory, "media"), upload))) throw new Error("Das ausgewählte Vorstandsfoto wurde nicht gefunden.");
-    if (board.status === "published" && !board.photoAlt) throw new Error("Bitte einen Alternativtext für das Vorstandsfoto angeben.");
+    for (const photo of board.photos) {
+      const upload = await readStoredUpload(path.join(directory, "media"), photo.id);
+      if (!upload || !upload.mediaType.startsWith("image/") || !(await uploadPayloadExists(path.join(directory, "media"), upload))) throw new Error("Das ausgewählte Vorstandsfoto wurde nicht gefunden.");
+      if (board.status === "published" && !photo.alt) throw new Error("Bitte für jedes Vorstandsfoto einen Alternativtext angeben.");
+    }
   }
 }
 
@@ -191,7 +193,7 @@ export function publishedAboutContent(content: EditorialContent, today = todayIn
   const previousStatutes = statutes.filter((document) => document.effectiveUntil && document.effectiveUntil < today);
   const foundingBdk = bdks.find((bdk) => bdk.founding && bdk.date <= today);
   const visibleMediaIds = new Set([
-    ...boards.map((board) => board.photoId),
+    ...boards.flatMap((board) => board.photos.map((photo) => photo.id)),
     ...bdks.filter((bdk) => bdk.date <= today).flatMap((bdk) => bdk.photoIds),
   ].filter(Boolean));
   const media = about.media.filter((item) => item.status === "published" && visibleMediaIds.has(item.id));

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { publishedAboutContent } from "@/lib/about-content";
+import type { AboutContent } from "@/lib/about-schema";
 import { readEditorialContent } from "@/lib/editorial";
+import { BoardPhotoCarousel } from "@/features/about/BoardPhotoCarousel";
 import { ExpandableArchive } from "@/features/about/ExpandableArchive";
+import { EntryPreview } from "@/features/about/EntryPreview";
 import { FoundingCounter } from "@/features/about/FoundingCounter";
 import { elapsedSinceFounding } from "@/lib/founding-time";
 
@@ -19,6 +22,10 @@ function documentHref(document: { id: string }) {
 
 function mediaHref(id: string) {
   return `/api/about/medien/${id}`;
+}
+
+function BdkEntryLinks({ bdk, documentsById }: { bdk: AboutContent["bdks"][number]; documentsById: Map<string, AboutContent["documents"][number]> }) {
+  return <>{bdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{bdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</>;
 }
 
 function validity(from: string, until: string) {
@@ -53,8 +60,8 @@ export default async function AboutPage() {
       <section className="about-board-section" aria-labelledby="current-board-heading">
         <div className="about-section-heading"><p className="news-eyebrow">Amtszeit {about.currentBoard?.term}</p><h2 id="current-board-heading">Der aktuelle Bezirksvorstand</h2></div>
         <div className="about-board-layout">
-          {about.currentBoard?.photoId ? <div className="about-board-photo"><Image src={mediaHref(about.currentBoard.photoId)} fill sizes="(max-width: 780px) 100vw, 52vw" alt={about.currentBoard.photoAlt} /></div> : <div className="about-board-photo-placeholder" role="img" aria-label="Ein Foto des aktuellen Bezirksvorstands wird ergänzt.">Vorstandsfoto folgt</div>}
-          <article className="about-board-message"><h3>Aus dem Bezirksvorstand</h3>{about.currentBoard?.message ? <p>{about.currentBoard.message}</p> : <p>Ein persönlicher Text des aktuellen Bezirksvorstands wird hier ergänzt.</p>}</article>
+          {about.currentBoard?.photos.length ? <BoardPhotoCarousel label={`Bilder Vorstand ${about.currentBoard.term}`} photos={about.currentBoard.photos} /> : <div className="about-board-photo-placeholder" role="img" aria-label="Ein Foto des aktuellen Bezirksvorstands wird ergänzt.">Vorstandsfoto folgt</div>}
+          <article className="about-board-message"><h3>Aus dem Bezirksvorstand</h3>{about.currentBoard?.message ? <EntryPreview title={`Vorstand ${about.currentBoard.term}`} content={about.currentBoard.message} modalMedia={about.currentBoard.photos.length ? <BoardPhotoCarousel label={`Bilder Vorstand ${about.currentBoard.term} im Dialog`} photos={about.currentBoard.photos} variant="modal" /> : undefined} /> : <p>Ein persönlicher Text des aktuellen Bezirksvorstands wird hier ergänzt.</p>}</article>
         </div>
       </section>
 
@@ -66,15 +73,15 @@ export default async function AboutPage() {
       <section className="about-archive" aria-labelledby="archive-heading">
         <header className="about-section-heading"><p className="news-eyebrow">Dokumentation</p><h2 id="archive-heading">Archiv</h2></header>
         <div className="about-archive-grid">
-          <section aria-labelledby="board-archive-heading"><h3 id="board-archive-heading">Frühere Bezirksvorstände</h3>{about.previousBoards.length ? <ExpandableArchive label="Vorstandsarchiv">{about.previousBoards.map((board) => <article className="about-board-archive-card" key={board.id}>{board.photoId ? <div className="about-board-archive-photo"><Image src={mediaHref(board.photoId)} fill sizes="(max-width: 780px) 100vw, 30vw" alt={board.photoAlt} /></div> : <div className="about-board-archive-photo-placeholder">Kein Foto hinterlegt</div>}<div><strong>Vorstand {board.term}</strong><span>{validity(board.startDate, board.endDate)}</span>{board.message ? <p>{board.message}</p> : <p>Für diesen Vorstand ist noch kein Rückblick hinterlegt.</p>}</div></article>)}</ExpandableArchive> : <p>Noch keine früheren Bezirksvorstände im Archiv.</p>}</section>
+          <section aria-labelledby="board-archive-heading"><h3 id="board-archive-heading">Frühere Bezirksvorstände</h3>{about.previousBoards.length ? <ExpandableArchive label="Vorstandsarchiv">{about.previousBoards.map((board) => <article className="about-board-archive-card" key={board.id}>{board.photos[0] ? <div className="about-board-archive-photo"><Image src={mediaHref(board.photos[0].id)} fill sizes="(max-width: 780px) 100vw, 30vw" alt={board.photos[0].alt} /></div> : <div className="about-board-archive-photo-placeholder">Kein Foto hinterlegt</div>}<div><strong>Vorstand {board.term}</strong><span>{validity(board.startDate, board.endDate)}</span>{board.message ? <EntryPreview title={`Vorstand ${board.term}`} content={board.message} modalMedia={board.photos.length ? <BoardPhotoCarousel label={`Bilder Vorstand ${board.term} im Dialog`} photos={board.photos} variant="modal" /> : undefined} /> : <p>Für diesen Vorstand ist noch kein Rückblick hinterlegt.</p>}</div></article>)}</ExpandableArchive> : <p>Noch keine früheren Bezirksvorstände im Archiv.</p>}</section>
 
           <section aria-labelledby="statute-archive-heading"><h3 id="statute-archive-heading">Frühere Satzungen</h3>{about.previousStatutes.length ? <ExpandableArchive label="Satzungsarchiv">{about.previousStatutes.map((document) => <article className="about-statute-archive-row" key={document.id}><div><strong>Satzung Nr. {document.number || "–"}</strong><span>{validity(document.effectiveFrom, document.effectiveUntil)}</span></div><a href={documentHref(document)} download>Herunterladen</a></article>)}</ExpandableArchive> : <p>Noch keine früheren Satzungen im Archiv.</p>}</section>
 
-          <section aria-labelledby="bdk-archive-heading"><h3 id="bdk-archive-heading">BDKs, Protokolle und Dateien</h3>{archivedBdks.length ? <ExpandableArchive label="BDK-Archiv">{archivedBdks.map((bdk) => <article className="about-bdk-archive-card" key={bdk.id}><strong>{bdk.title}</strong>{bdk.subtitle ? <span>{bdk.subtitle}</span> : null}<small>{bdkDetails(bdk.date, bdk.location)}</small><div className="about-archive-links">{bdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{bdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</div></article>)}</ExpandableArchive> : <p>Noch keine weiteren BDKs im Archiv.</p>}</section>
+          <section aria-labelledby="bdk-archive-heading"><h3 id="bdk-archive-heading">BDKs, Protokolle und Dateien</h3>{archivedBdks.length ? <ExpandableArchive label="BDK-Archiv">{archivedBdks.map((bdk) => <article className="about-bdk-archive-card" key={bdk.id}><strong>{bdk.title}</strong>{bdk.subtitle ? <span>{bdk.subtitle}</span> : null}<small>{bdkDetails(bdk.date, bdk.location)}</small><EntryPreview title={bdk.title} content={bdk.summary} modalActions={bdk.documentIds.length || bdk.links.length ? <BdkEntryLinks bdk={bdk} documentsById={documentsById} /> : undefined} /><div className="about-archive-links"><BdkEntryLinks bdk={bdk} documentsById={documentsById} /></div></article>)}</ExpandableArchive> : <p>Noch keine weiteren BDKs im Archiv.</p>}</section>
         </div>
       </section>
 
-      {upcomingBdks.length ? <section className="about-upcoming-bdks" aria-labelledby="upcoming-bdks-heading"><header className="about-section-heading"><p className="news-eyebrow">Ausblick</p><h2 id="upcoming-bdks-heading">Kommende BDKs</h2></header>{upcomingBdks.map((bdk) => <article key={bdk.id}><h3>{bdk.title}</h3>{bdk.subtitle ? <p>{bdk.subtitle}</p> : null}<p>{bdk.summary}</p><p><strong>{formatDate(bdk.date)}</strong>{bdk.location ? ` · ${bdk.location}` : null}</p></article>)}</section> : null}
+      {upcomingBdks.length ? <section className="about-upcoming-bdks" aria-labelledby="upcoming-bdks-heading"><header className="about-section-heading"><p className="news-eyebrow">Ausblick</p><h2 id="upcoming-bdks-heading">Kommende BDKs</h2></header>{upcomingBdks.map((bdk) => <article key={bdk.id}><h3>{bdk.title}</h3>{bdk.subtitle ? <p>{bdk.subtitle}</p> : null}<EntryPreview title={bdk.title} content={bdk.summary} modalActions={bdk.documentIds.length || bdk.links.length ? <BdkEntryLinks bdk={bdk} documentsById={documentsById} /> : undefined} /><p><strong>{formatDate(bdk.date)}</strong>{bdk.location ? ` · ${bdk.location}` : null}</p>{bdk.documentIds.length || bdk.links.length ? <div className="about-archive-links"><BdkEntryLinks bdk={bdk} documentsById={documentsById} /></div> : null}</article>)}</section> : null}
 
       {about.foundingBdk ? <section className="about-founding" aria-labelledby="founding-heading">
         <p className="news-eyebrow">Unsere Gründung</p>

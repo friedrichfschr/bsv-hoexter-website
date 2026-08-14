@@ -1,0 +1,104 @@
+.carousel {
+  position: relative;
+  min-width: 0;
+  background: var(--color-warm);
+}
+
+.frame {
+  position: relative;
+  min-height: min(54vw, 560px);
+  overflow: hidden;
+}
+
+.frame img {
+  object-fit: cover;
+}
+
+.modal .frame {
+  min-height: min(52vw, 380px);
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  transform: translateY(-50%);
+  border: var(--border-width-control) solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font: inherit;
+  font-size: 1.45rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.previous {
+  left: 16px;
+}
+
+.next {
+  right: 16px;
+}
+
+.dots {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.dot {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot::before {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-ink);
+  box-shadow: 0 1px 4px rgb(20 20 18 / 40%);
+  content: "";
+}
+
+.dot[aria-current="true"]::before {
+  background: var(--color-gold);
+}
+
+@media (max-width: 780px) {
+  .frame {
+    min-height: min(82vw, 520px);
+  }
+
+  .arrow {
+    width: 44px;
+    height: 44px;
+  }
+
+  .previous {
+    left: 10px;
+  }
+
+  .next {
+    right: 10px;
+  }
+}

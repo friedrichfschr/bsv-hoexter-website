@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: Context) {
   const { id } = await params;
   const about = publishedAboutContent(await readEditorialContent());
   const managedMedia = about.media.find((media) => media.id === id);
-  const boardPhoto = about.boards.some((board) => board.photoId === id);
+  const boardPhoto = about.boards.some((board) => board.photos.some((photo) => photo.id === id));
   if (!managedMedia && !boardPhoto) return new Response("Nicht gefunden", { status: 404 });
   if (managedMedia?.bundledFile) {
     try {
