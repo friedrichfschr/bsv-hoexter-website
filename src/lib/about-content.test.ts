@@ -14,11 +14,11 @@ import { replaceEditorialContent } from "@/lib/articles";
 import { storeUpload } from "@/lib/uploads";
 
 describe("dynamic About content", () => {
-  it("seeds the confirmed founding BDK and its three source documents", () => {
+  it("seeds the founding BDK documents while keeping the Satzung separate", () => {
     const publicContent = publishedAboutContent({ articles: [], documents: [], about: defaultAboutContent });
     expect(publicContent.foundingBdk?.date).toBe("2026-07-02");
     expect(publicContent.foundingBdk?.location).toContain("Schulen der Brede");
-    expect(publicContent.foundingBdk?.documentIds).toHaveLength(3);
+    expect(publicContent.foundingBdk?.documentIds).toHaveLength(2);
     expect(publicContent.currentStatute?.title).toContain("Satzung");
     expect(defaultAboutContent.activeBoardId).toBe("bezirksvorstand-2026-27");
     expect(publicContent.foundingBdk?.photoIds).toHaveLength(2);

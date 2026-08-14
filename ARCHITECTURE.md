@@ -132,8 +132,9 @@ time and place are optional. Their compact PDF attachments inherit the BDK's
 visibility and expose no separate state, type, or date. Ordinary BDK photos are no
 longer part of the model. The founding BDK metadata and photographs remain
 source-controlled constants; Redaktion may change only its document attachments.
-The public founding lead presents its live elapsed-time sentence and descriptive
-copy on the left with document buttons on the right, followed by the fixed gallery.
+The public founding lead emphasizes a live elapsed-time heading between subordinate
+founding context lines and descriptive copy on the left, with document buttons on
+the right, followed by the fixed gallery.
 Public archive columns use bounded native disclosures so only the first
 records render initially; Vorstand entries retain their photo/text history while
 statutes remain compact legal download rows. The initial archive is

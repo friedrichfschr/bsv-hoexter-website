@@ -1424,10 +1424,12 @@ a:hover {
 .about-archive-disclosure[open] .about-archive-hide { display: inline; }
 .about-founding { padding-top: 34px; border-top: var(--border-width-control) solid var(--color-ink); }
 .about-founding-lead { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: clamp(36px, 7vw, 96px); margin-top: clamp(28px, 5vw, 54px); align-items: start; }
-.about-founding-counter { max-width: 900px; margin: 0 0 30px; color: var(--color-ink); font-weight: 620; text-align: left; font-variant-numeric: tabular-nums; }
+.about-founding-timer { margin-bottom: 28px; }
+.about-founding-context { margin: 0; color: var(--color-ink); font-family: var(--font-sans), "Segoe UI", sans-serif; font-size: clamp(1rem, 1.7vw, 1.25rem); font-weight: 750; letter-spacing: 0.01em; }
+.about-founding-counter { max-width: 900px; margin: 7px 0 10px; color: var(--color-ink); font-weight: 620; text-align: left; font-variant-numeric: tabular-nums; }
+.about-founding h2.about-founding-counter { font-family: var(--font-sans), "Segoe UI", sans-serif; font-size: clamp(2.7rem, 5.8vw, 5.6rem); font-weight: 850; letter-spacing: -0.055em; line-height: 0.9; }
 .about-founding-copy { max-width: 820px; }
 .about-founding-copy > p { color: var(--color-ink-soft); }
-.about-founding-subtitle { font-family: var(--font-serif), Georgia, serif; font-size: clamp(1.35rem, 3vw, 2rem); }
 .about-founding-gallery { display: grid; grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr); gap: 18px; margin-top: clamp(34px, 6vw, 64px); }
 .about-founding-gallery figure { min-width: 0; margin: 0; }
 .about-founding-gallery figure > div { position: relative; min-height: clamp(320px, 43vw, 620px); overflow: hidden; background: var(--color-warm); }

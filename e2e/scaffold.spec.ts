@@ -102,7 +102,9 @@ test("About page renders the dynamic founding archive and source files", async (
   await expect(page.getByRole("heading", { level: 3, name: "Frühere Bezirksvorstände" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Frühere Satzungen" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "BDKs, Protokolle und Dateien" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: /Vor .* wurde die BSV Höxter in Brakel gegründet\./ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: /^\d+ / })).toBeVisible();
+  await expect(page.getByText(/Seitdem arbeitet die BSV Höxter für die Interessen/)).toBeVisible();
+  await expect(page.getByText("Der gemeinsame Start der kreisweiten Schüler*innenvertretung", { exact: true })).toHaveCount(0);
   await expect(page.locator(".about-founding-lead > .about-founding-copy")).toBeVisible();
   await expect(page.locator(".about-founding-lead > .about-founding-resources")).toBeVisible();
   await expect(page.getByRole("img", { name: "Arbeitsphase bei der Gründungs-BDK am 2. Juli 2026." })).toBeVisible();
