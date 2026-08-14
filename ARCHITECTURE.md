@@ -122,14 +122,22 @@ requires edge/shared abuse controls and durable consent-aware storage.
 
 `/ueber-uns` is backed by the `about` collection inside the serialized editorial
 repository. Its schemas and service own introductory text, Vorstand terms and
-photos, BDK records, statutes, invitations, agendas, protocols, publication
-state, document references, and media existence checks. The initial archive is
+photos, one explicit active-Vorstand reference, BDK records, statutes with legal
+validity periods/numbers, invitations, agendas, protocols, external HTTPS links,
+publication state, document references, founding galleries, and media existence
+checks. Public archive columns use bounded client disclosures so only the first
+records render initially; Vorstand entries retain their photo/text history while
+statutes remain compact legal download rows. The initial archive is
 seeded from the supplied founding documents: the Satzung, school invitations,
 and agenda for the first BDK on 2 July 2026 at the Schulen der Brede in Brakel.
 The source PDFs are bundled outside the public directory under
 `content/about-documents/` and served only through the publication-aware document
 route; subsequent PDFs and Vorstand photos use validated private uploads and
-narrow published media routes.
+narrow published media routes. The supplied founding-conference photographs are
+metadata-free JPEGs under `content/about-images/`, traced into the deployment,
+and served through the same publication-aware media boundary rather than static
+public URLs. Redaktion records use native expandable disclosures and pending
+uploads are removed when replaced, deleted, or abandoned on normal navigation.
 Missing current-board photo/message fields render honest empty states instead of
 invented people or statements. Legacy whole-workspace writes preserve About data
 when omitted and apply the same About invariants when supplied.

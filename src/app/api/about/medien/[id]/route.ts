@@ -10,9 +10,23 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Context) {
   const { id } = await params;
-  if (!publishedAboutContent(await readEditorialContent()).boards.some((board) => board.photoId === id)) return new Response("Nicht gefunden", { status: 404 });
+  const about = publishedAboutContent(await readEditorialContent());
+  const managedMedia = about.media.find((media) => media.id === id);
+  const boardPhoto = about.boards.some((board) => board.photoId === id);
+  if (!managedMedia && !boardPhoto) return new Response("Nicht gefunden", { status: 404 });
+  if (managedMedia?.bundledFile) {
+    try {
+      const bytes = await readFile(path.join(process.cwd(), "content", "about-images", managedMedia.bundledFile));
+      const extension = path.extname(managedMedia.bundledFile).toLowerCase();
+      const mediaType = extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
+      return new Response(new Uint8Array(bytes), { headers: { "Content-Type": mediaType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Response("Nicht gefunden", { status: 404 });
+      throw error;
+    }
+  }
   const directory = path.join(resolveEditorialDirectory(), "media");
-  const metadata = await readStoredUpload(directory, id);
+  const metadata = await readStoredUpload(directory, managedMedia?.mediaId || id);
   if (!metadata || !metadata.mediaType.startsWith("image/")) return new Response("Nicht gefunden", { status: 404 });
   try {
     const bytes = await readFile(path.join(directory, metadata.storedName));

@@ -2,3 +2,5 @@
 *.ico binary
 *.webp binary
 *.pdf binary
+*.jpg binary
+*.jpeg binary

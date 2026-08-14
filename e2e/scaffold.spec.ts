@@ -101,6 +101,10 @@ test("About page renders the dynamic founding archive and source files", async (
   await expect(page.getByRole("heading", { level: 3, name: "Frühere Satzungen" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "BDKs, Protokolle und Dateien" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Gegründet am 02.07.2026" })).toBeVisible();
+  await expect(page.getByLabel("Zeit seit der Gründung")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Schüler*innen arbeiten bei der Gründungs-BDK der BSV Höxter in Gesprächsgruppen." })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Gruppenfoto der Teilnehmenden der Gründungs-BDK der BSV Höxter." })).toBeVisible();
+  expect((await page.request.get("/api/about/medien/gruendungs-bdk-konferenz-2026")).status()).toBe(200);
   const invitation = page.getByRole("link", { name: "Originale Schuleinladungen zur Gründungs-BDK" });
   await expect(invitation).toHaveAttribute("href", "/api/about/dokumente/gruendungs-bdk-einladungen-2026");
   const response = await page.request.get(await invitation.getAttribute("href") ?? "");

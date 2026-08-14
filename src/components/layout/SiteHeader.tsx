@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const navigationItems = [
   { href: "/", label: "Startseite" },
@@ -17,6 +17,7 @@ const navigationItems = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const hydrated = useSyncExternalStore(() => () => undefined, () => true, () => false);
   const menuRef = useRef<HTMLDetailsElement>(null);
   const menuButtonRef = useRef<HTMLElement>(null);
 
@@ -50,7 +51,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <details ref={menuRef} className="site-navigation-container" onToggle={(event) => setMenuOpen(event.currentTarget.open)}>
-          <summary ref={menuButtonRef} role="button" className="site-menu-button" aria-controls="mobile-navigation" aria-expanded={menuOpen} aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}>
+          <summary ref={menuButtonRef} role="button" className="site-menu-button" aria-controls="mobile-navigation" aria-expanded={hydrated ? menuOpen : undefined} aria-label={hydrated && menuOpen ? "Menü schließen" : "Menü öffnen"}>
             <span>Menü</span>
             {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </summary>

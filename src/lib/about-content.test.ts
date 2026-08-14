@@ -19,6 +19,64 @@ describe("dynamic About content", () => {
     expect(publicContent.foundingBdk?.location).toContain("Schulen der Brede");
     expect(publicContent.foundingBdk?.documentIds).toHaveLength(3);
     expect(publicContent.currentStatute?.title).toContain("Satzung");
+    expect(defaultAboutContent.activeBoardId).toBe("bezirksvorstand-2026-27");
+    expect(publicContent.foundingBdk?.photoIds).toHaveLength(2);
+  });
+
+  it("uses the explicitly designated active Vorstand", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.boards.unshift({
+      ...content.boards[0],
+      id: "bezirksvorstand-2025-26",
+      term: "2025/26",
+      startDate: "2025-07-01",
+      endDate: "2026-06-30",
+    });
+    content.activeBoardId = "bezirksvorstand-2026-27";
+
+    const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
+    expect(publicContent.currentBoard?.id).toBe("bezirksvorstand-2026-27");
+    expect(publicContent.previousBoards.map((board) => board.id)).toContain("bezirksvorstand-2025-26");
+  });
+
+  it("rejects an unknown active Vorstand reference", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-active-"));
+    await expect(updateAboutContent(directory, {
+      ...defaultAboutContent,
+      activeBoardId: "nicht-vorhanden",
+    })).rejects.toThrow("Aktiver Bezirksvorstand");
+  });
+
+  it("rejects a future Vorstand as the active board", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-future-active-"));
+    const content = structuredClone(defaultAboutContent);
+    content.boards[0].endDate = "2098-12-31";
+    content.boards.push({ ...content.boards[0], id: "vorstand-2099", term: "2099/2100", startDate: "2099-01-01", endDate: "" });
+    content.activeBoardId = "vorstand-2099";
+    await expect(updateAboutContent(directory, content)).rejects.toThrow("Amtszeit des aktiven Bezirksvorstands");
+  });
+
+  it("uses statute validity instead of upload date", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.documents.push({
+      ...content.documents[0],
+      id: "satzung-2",
+      title: "Satzung Nummer 2",
+      number: "2",
+      date: "2026-06-01",
+      effectiveFrom: "2027-01-01",
+      effectiveUntil: "",
+    });
+    const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
+    expect(publicContent.currentStatute?.id).toBe("satzung-2026");
+  });
+
+  it("rejects unsafe archive links", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-links-"));
+    await expect(updateAboutContent(directory, {
+      ...defaultAboutContent,
+      bdks: [{ ...defaultAboutContent.bdks[0], links: [{ label: "Unsicher", url: "javascript:alert(1)" }] }],
+    })).rejects.toThrow();
   });
 
   it("does not expose draft Vorstand or BDK records publicly", () => {
@@ -36,10 +94,14 @@ describe("dynamic About content", () => {
     content.bdks.push({
       id: "bdk-entwurf",
       title: "Nächste BDK",
+      subtitle: "",
       date: "2027-09-01",
+      time: "00:00",
       location: "Höxter",
       summary: "Interner Entwurf für die nächste Konferenz.",
       documentIds: [],
+      photoIds: [],
+      links: [],
       founding: false,
       status: "draft",
     });
@@ -124,6 +186,19 @@ describe("dynamic About content", () => {
       boards: [{ ...defaultAboutContent.boards[0], photoId: upload.id, photoAlt: "Der aktuelle Bezirksvorstand" }],
     });
     await updateAboutContent(directory, defaultAboutContent);
+    await expect(access(path.join(directory, "media", upload.storedName))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("removes replaced About uploads through the legacy workspace", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-legacy-cleanup-"));
+    const upload = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "vorstand.png", { type: "image/png" }));
+    await updateAboutContent(directory, {
+      ...defaultAboutContent,
+      boards: [{ ...defaultAboutContent.boards[0], photoId: upload.id, photoAlt: "Der aktuelle Bezirksvorstand" }],
+    });
+    await replaceEditorialContent(directory, { articles: [], documents: [], about: defaultAboutContent });
     await expect(access(path.join(directory, "media", upload.storedName))).rejects.toMatchObject({ code: "ENOENT" });
   });
 

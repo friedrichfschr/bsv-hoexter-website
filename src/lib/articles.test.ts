@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtemp } from "node:fs/promises";
+import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import { createArticle, replaceEditorialContent, updateArticle } from "@/lib/art
 import { emptyEditorialContent, publishedArticleBySlug, publishedArticles, articleSchema } from "@/lib/editorial";
 import { readEditorialContent, writeEditorialContent } from "@/lib/editorial";
 import { storeUpload } from "@/lib/uploads";
+import { defaultAboutContent, updateAboutContent } from "@/lib/about-content";
 
 const draftInput = {
   slug: "erste-meldung",
@@ -115,5 +116,24 @@ describe("article service", () => {
       articles: [{ ...publishedInput, id: "with-image", imageId: upload.id, imageAlt: "" }],
       documents: [],
     })).rejects.toThrow("Alternativtext");
+  });
+
+  it("keeps an upload that remains referenced by an article when About stops using it", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-articles-shared-upload-"));
+    const upload = await storeUpload(path.join(directory, "media"), new File([
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], "shared.png", { type: "image/png" }));
+    await updateAboutContent(directory, {
+      ...defaultAboutContent,
+      media: [...defaultAboutContent.media, { id: "shared-image", alt: "Gemeinsam genutztes Testbild", caption: "", status: "draft", mediaId: upload.id, bundledFile: "" }],
+    });
+
+    await replaceEditorialContent(directory, {
+      articles: [{ ...publishedInput, id: "shared-article", imageId: upload.id, imageAlt: "Gemeinsam genutztes Testbild" }],
+      documents: [],
+      about: defaultAboutContent,
+    });
+
+    await expect(access(path.join(directory, "media", upload.storedName))).resolves.toBeUndefined();
   });
 });

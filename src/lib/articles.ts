@@ -9,7 +9,7 @@ import {
   type Article,
 } from "@/lib/editorial";
 import { readStoredUpload } from "@/lib/uploads";
-import { validateAboutContent } from "@/lib/about-content";
+import { cleanupRemovedAboutUploads, validateAboutContent } from "@/lib/about-content";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });
 export type ArticleMutation = z.input<typeof articleMutationSchema>;
@@ -78,7 +78,14 @@ export async function replaceEditorialContent(directory = resolveEditorialDirect
     const content = editorialContentSchema.parse({ ...object, about: object.about === undefined ? current.about : object.about });
     await validateArticles(directory, content.articles);
     await validateAboutContent(directory, content.about);
-    return { content, result: content };
+    return {
+      content,
+      result: content,
+      afterWrite: () => cleanupRemovedAboutUploads(directory, current.about, content.about, [
+        ...content.articles.map((article) => article.imageId),
+        ...content.documents.map((document) => document.mediaId),
+      ]),
+    };
   });
 }
 
