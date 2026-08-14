@@ -31,7 +31,7 @@ export function FoundingCounter({ date, time, initialElapsed }: { date: string; 
     return () => window.clearInterval(timer);
   }, [date, time]);
 
-  return <p className="about-founding-counter" aria-label="Zeit seit der Gründung" aria-live="off">
+  return <h2 id="founding-heading" className="about-founding-counter" aria-live="off">
     {foundingSentence(elapsed)}
-  </p>;
+  </h2>;
 }

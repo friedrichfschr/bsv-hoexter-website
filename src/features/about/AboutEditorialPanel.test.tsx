@@ -26,10 +26,25 @@ describe("AboutEditorialPanel", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalled());
   });
 
-  it("does not expose publication controls for Satzungen", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ about: defaultAboutContent }) }));
+  it("removes derived chronology and visibility controls", async () => {
+    const about = structuredClone(defaultAboutContent);
+    about.bdks.push({ ...about.bdks[0], id: "bdk-2027", title: "BDK 2027", founding: false, documentIds: [], photoIds: [], links: [], status: "draft" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ about }) }));
     render(<AboutEditorialPanel />);
     await screen.findByLabelText("Aktiver Bezirksvorstand");
+
+    expect(screen.queryByLabelText("Status Vorstand 1")).toBeNull();
+    expect(screen.queryByLabelText("Ende Vorstand 1")).toBeNull();
     expect(screen.queryByLabelText("Status Dokument 1")).toBeNull();
+    expect(screen.queryByLabelText("Gültig bis Satzung 1")).toBeNull();
+    expect(screen.getByLabelText("Nummer Satzung 1")).toBeRequired();
+
+    fireEvent.click(screen.getByText("BDK 2027").closest("summary")!);
+    const bdk = screen.getByRole("group", { name: "BDK 2" });
+    expect(within(bdk).queryByLabelText("Status BDK 2")).toBeNull();
+    expect(within(bdk).getByLabelText("Uhrzeit BDK 2")).not.toBeRequired();
+    expect(within(bdk).getByLabelText("Ort BDK 2")).not.toBeRequired();
+    expect(within(bdk).queryByLabelText("Neues Foto BDK 2")).toBeNull();
+    expect(within(bdk).getByLabelText("Neuen Anhang BDK 2").closest("fieldset")).toHaveClass("about-editor-options-compact");
   });
 });

@@ -65,13 +65,13 @@ test("admin can edit About and BDK records", async ({ page }, testInfo) => {
   await page.locator("details.about-editor-record").filter({ hasText: "BDK 2" }).locator("summary").click();
   const newestBdk = page.getByRole("group", { name: "BDK 2" });
   await expect(newestBdk.getByLabel("Neuen Anhang BDK 2")).toBeVisible();
-  await expect(newestBdk.getByLabel("Neues Foto BDK 2")).toBeVisible();
+  await expect(newestBdk.getByLabel("Neues Foto BDK 2")).toHaveCount(0);
+  await expect(newestBdk.getByLabel("Status BDK 2")).toHaveCount(0);
   await expect(newestBdk.getByText("Pflichtfeld · 10–3.000 Zeichen")).toBeVisible();
   await newestBdk.getByLabel("ID BDK 2").fill("test-bdk-2099");
   await newestBdk.getByLabel("Titel BDK 2", { exact: true }).fill("Test-BDK 2099");
   await newestBdk.getByLabel("Datum BDK 2").fill("2099-10-01");
-  await newestBdk.getByLabel("Ort BDK 2").fill("Höxter");
-  await newestBdk.getByLabel("Status BDK 2").selectOption("published");
+
   await newestBdk.getByLabel("Zusammenfassung BDK 2").fill("Ein veröffentlichter Testdatensatz für das dynamische BDK-Archiv.");
   await page.getByRole("button", { name: "Alle Über-uns-Inhalte speichern" }).click();
   await expect(page.getByRole("status")).toHaveText("Über-uns-Inhalte gespeichert.");

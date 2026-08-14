@@ -69,7 +69,7 @@ export const bdkRecordSchema = z.object({
   subtitle: z.string().trim().max(300).default(""),
   date: isoDate,
   time: optionalTime.default(""),
-  location: z.string().trim().min(2).max(180),
+  location: z.union([z.literal(""), z.string().trim().min(2).max(180)]),
   summary: z.string().trim().min(10).max(3000),
   documentIds: z.array(identifier).max(30),
   photoIds: z.array(identifier).max(20).default([]),

@@ -124,12 +124,17 @@ requires edge/shared abuse controls and durable consent-aware storage.
 repository. Its schemas and service own introductory text, Vorstand terms and
 photos, one explicit active-Vorstand reference, BDK records, statutes with legal
 validity periods/numbers, external HTTPS links, document references, founding
-galleries, and media existence checks. Attachment and photo publication is derived
-from the containing BDK; editors do not manage a second publication state, document
-type, or attachment date. A photo's caption is also its alternative text. The
-founding BDK metadata and photographs are source-controlled constants; Redaktion
-may change only its document attachments. Public archive columns use bounded native
-disclosures so only the first
+galleries, and media existence checks. Vorstand records and Satzungen are ordered
+by their start date; every record except the newest ends on the calendar day before
+its successor begins. Their visibility is derived rather than editor-controlled.
+Satzungsnummern are required. BDK records are likewise public by definition, while
+time and place are optional. Their compact PDF attachments inherit the BDK's
+visibility and expose no separate state, type, or date. Ordinary BDK photos are no
+longer part of the model. The founding BDK metadata and photographs remain
+source-controlled constants; Redaktion may change only its document attachments.
+The public founding lead presents its live elapsed-time sentence and descriptive
+copy on the left with document buttons on the right, followed by the fixed gallery.
+Public archive columns use bounded native disclosures so only the first
 records render initially; Vorstand entries retain their photo/text history while
 statutes remain compact legal download rows. The initial archive is
 seeded from the supplied founding documents: the Satzung, school invitations,

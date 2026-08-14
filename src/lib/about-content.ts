@@ -46,30 +46,53 @@ function referencedUploadIds(about: AboutContent) {
   ].filter(Boolean));
 }
 
+function previousIsoDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day - 1));
+  return date.toISOString().slice(0, 10);
+}
+
+function chronologicalBoards(boards: AboutContent["boards"]) {
+  const ascending = [...boards].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  return ascending.map((board, index) => ({
+    ...board,
+    endDate: ascending[index + 1] ? previousIsoDate(ascending[index + 1].startDate) : "",
+    status: "published" as const,
+  })).reverse();
+}
+
+function chronologicalStatutes(documents: AboutContent["documents"]) {
+  const ascending = documents.filter((document) => document.kind === "satzung").sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+  return ascending.map((document, index) => ({
+    ...document,
+    effectiveUntil: ascending[index + 1] ? previousIsoDate(ascending[index + 1].effectiveFrom) : "",
+    status: "published" as const,
+  })).reverse();
+}
+
 export function normalizeAboutEditorialContent(about: AboutContent) {
   const defaultFounding = defaultAboutContent.bdks.find((bdk) => bdk.founding)!;
   const submittedFounding = about.bdks.find((bdk) => bdk.id === defaultFounding.id);
-  const hardcodedMediaIds = new Set(defaultFounding.photoIds);
+
   const bdks = [
     { ...defaultFounding, documentIds: submittedFounding?.documentIds ?? [] },
-    ...about.bdks.filter((bdk) => bdk.id !== defaultFounding.id).map((bdk) => ({ ...bdk, founding: false })),
+    ...about.bdks.filter((bdk) => bdk.id !== defaultFounding.id).map((bdk) => ({ ...bdk, founding: false, photoIds: [], status: "published" as const })),
   ];
   const publishedDocumentIds = new Set(bdks.filter((bdk) => bdk.status === "published").flatMap((bdk) => bdk.documentIds));
-  const publishedPhotoIds = new Set(bdks.filter((bdk) => bdk.status === "published").flatMap((bdk) => bdk.photoIds));
+
+  const documents = [
+    ...chronologicalStatutes(about.documents),
+    ...about.documents.filter((document) => document.kind !== "satzung").map((document) => ({
+      ...document,
+      status: publishedDocumentIds.has(document.id) ? "published" as const : "draft" as const,
+    })),
+  ];
   return aboutContentSchema.parse({
     ...about,
+    boards: chronologicalBoards(about.boards),
     bdks,
-    documents: about.documents.map((document) => ({
-      ...document,
-      status: document.kind === "satzung" || publishedDocumentIds.has(document.id) ? "published" : "draft",
-    })),
-    media: [
-      ...defaultAboutContent.media.filter((media) => hardcodedMediaIds.has(media.id)),
-      ...about.media.filter((media) => !hardcodedMediaIds.has(media.id)).map((media) => ({
-        ...media,
-        status: publishedPhotoIds.has(media.id) ? "published" : "draft",
-      })),
-    ],
+    documents,
+    media: defaultAboutContent.media.map((media) => ({ ...media })),
   });
 }
 
@@ -96,7 +119,7 @@ export async function validateAboutContent(directory: string, about: AboutConten
     if (board.endDate && board.endDate < board.startDate) throw new Error("Das Ende der Amtszeit darf nicht vor ihrem Beginn liegen.");
   }
   const activeBoard = about.boards.find((board) => board.id === about.activeBoardId);
-  if (!activeBoard || activeBoard.status !== "published") throw new Error("Aktiver Bezirksvorstand: Bitte genau einen veröffentlichten Vorstand auswählen.");
+  if (!activeBoard) throw new Error("Aktiver Bezirksvorstand: Bitte genau einen vorhandenen Vorstand auswählen.");
   const today = todayInBerlin();
   if (activeBoard.startDate > today || (activeBoard.endDate && activeBoard.endDate < today)) throw new Error("Die Amtszeit des aktiven Bezirksvorstands muss heute gültig sein.");
   if (about.bdks.filter((bdk) => bdk.status === "published" && bdk.founding).length > 1) throw new Error("Es darf nur eine Gründungs-BDK geben.");
@@ -109,6 +132,7 @@ export async function validateAboutContent(directory: string, about: AboutConten
     if (bdk.status === "published" && bdk.photoIds.some((id) => !publishedMediaIds.has(id))) throw new Error("Eine veröffentlichte BDK darf nur veröffentlichte Bilder enthalten.");
   }
   for (const document of about.documents) {
+    if (document.kind === "satzung" && !document.number) throw new Error("Bitte für jede Satzung eine Satzungsnummer angeben.");
     if (Boolean(document.mediaId) === Boolean(document.bundledFile)) throw new Error("Jedes Dokument benötigt genau eine gespeicherte Datei.");
     if (document.bundledFile && !(await fileExists(path.join(process.cwd(), "content", "about-documents", document.bundledFile)))) throw new Error("Das ausgewählte PDF wurde nicht gefunden.");
     if (document.mediaId) {

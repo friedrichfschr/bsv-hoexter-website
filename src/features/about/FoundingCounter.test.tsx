@@ -10,9 +10,9 @@ describe("FoundingCounter", () => {
     );
   });
 
-  it("renders the founding sentence without a Gegründet-am heading", () => {
+  it("renders the live founding sentence as the section heading", () => {
     render(<FoundingCounter date="2026-07-02" time="00:00" initialElapsed={{ years: 0, months: 1, days: 0, hours: 0, minutes: 2, seconds: 0 }} />);
-    expect(screen.getByText(/wurde die BSV Höxter in Brakel gegründet/)).toBeInTheDocument();
-    expect(screen.queryByText(/Gegründet am/)).toBeNull();
+    expect(screen.getByRole("heading", { level: 2, name: /Vor .* wurde die BSV Höxter in Brakel gegründet\./ })).toBeInTheDocument();
+    expect(screen.queryByText("Die Gründung der BSV Höxter")).toBeNull();
   });
 });

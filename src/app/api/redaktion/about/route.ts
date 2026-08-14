@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateAboutContent } from "@/lib/about-content";
+import { normalizeAboutEditorialContent, updateAboutContent } from "@/lib/about-content";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
 import { readEditorialContent } from "@/lib/editorial";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
@@ -14,7 +14,7 @@ function unauthorized(rateLimited = false) {
 export async function GET(request: Request) {
   const authorization = authorizeEditorialRequest(request);
   if (authorization !== "authorized") return unauthorized(authorization === "rate-limited");
-  return NextResponse.json({ about: (await readEditorialContent()).about }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ about: normalizeAboutEditorialContent((await readEditorialContent()).about) }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PUT(request: Request) {

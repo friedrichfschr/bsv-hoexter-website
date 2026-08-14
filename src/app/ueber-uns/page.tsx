@@ -25,6 +25,10 @@ function validity(from: string, until: string) {
   return `${formatDate(from)} – ${until ? formatDate(until) : "heute"}`;
 }
 
+function bdkDetails(date: string, location: string) {
+  return [formatDate(date), location].filter(Boolean).join(" · ");
+}
+
 export default async function AboutPage() {
   const about = publishedAboutContent(await readEditorialContent());
   const documentsById = new Map(about.documents.map((document) => [document.id, document]));
@@ -66,16 +70,19 @@ export default async function AboutPage() {
 
           <section aria-labelledby="statute-archive-heading"><h3 id="statute-archive-heading">Frühere Satzungen</h3>{about.previousStatutes.length ? <ExpandableArchive label="Satzungsarchiv">{about.previousStatutes.map((document) => <article className="about-statute-archive-row" key={document.id}><div><strong>Satzung Nr. {document.number || "–"}</strong><span>{validity(document.effectiveFrom, document.effectiveUntil)}</span></div><a href={documentHref(document)} download>Herunterladen</a></article>)}</ExpandableArchive> : <p>Noch keine früheren Satzungen im Archiv.</p>}</section>
 
-          <section aria-labelledby="bdk-archive-heading"><h3 id="bdk-archive-heading">BDKs, Protokolle und Dateien</h3>{archivedBdks.length ? <ExpandableArchive label="BDK-Archiv">{archivedBdks.map((bdk) => <article className="about-bdk-archive-card" key={bdk.id}><strong>{bdk.title}</strong>{bdk.subtitle ? <span>{bdk.subtitle}</span> : null}<small>{formatDate(bdk.date)} · {bdk.location}</small><div className="about-archive-links">{bdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{bdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</div></article>)}</ExpandableArchive> : <p>Noch keine weiteren BDKs im Archiv.</p>}</section>
+          <section aria-labelledby="bdk-archive-heading"><h3 id="bdk-archive-heading">BDKs, Protokolle und Dateien</h3>{archivedBdks.length ? <ExpandableArchive label="BDK-Archiv">{archivedBdks.map((bdk) => <article className="about-bdk-archive-card" key={bdk.id}><strong>{bdk.title}</strong>{bdk.subtitle ? <span>{bdk.subtitle}</span> : null}<small>{bdkDetails(bdk.date, bdk.location)}</small><div className="about-archive-links">{bdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{bdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</div></article>)}</ExpandableArchive> : <p>Noch keine weiteren BDKs im Archiv.</p>}</section>
         </div>
       </section>
 
-      {upcomingBdks.length ? <section className="about-upcoming-bdks" aria-labelledby="upcoming-bdks-heading"><header className="about-section-heading"><p className="news-eyebrow">Ausblick</p><h2 id="upcoming-bdks-heading">Kommende BDKs</h2></header>{upcomingBdks.map((bdk) => <article key={bdk.id}><h3>{bdk.title}</h3>{bdk.subtitle ? <p>{bdk.subtitle}</p> : null}<p>{bdk.summary}</p><p><strong>{formatDate(bdk.date)}</strong> · {bdk.location}</p></article>)}</section> : null}
+      {upcomingBdks.length ? <section className="about-upcoming-bdks" aria-labelledby="upcoming-bdks-heading"><header className="about-section-heading"><p className="news-eyebrow">Ausblick</p><h2 id="upcoming-bdks-heading">Kommende BDKs</h2></header>{upcomingBdks.map((bdk) => <article key={bdk.id}><h3>{bdk.title}</h3>{bdk.subtitle ? <p>{bdk.subtitle}</p> : null}<p>{bdk.summary}</p><p><strong>{formatDate(bdk.date)}</strong>{bdk.location ? ` · ${bdk.location}` : null}</p></article>)}</section> : null}
 
       {about.foundingBdk ? <section className="about-founding" aria-labelledby="founding-heading">
-        <div className="about-founding-copy"><p className="news-eyebrow">Unsere Gründung</p><h2 id="founding-heading">Die Gründung der BSV Höxter</h2><FoundingCounter date={about.foundingBdk.date} time={foundingTime} initialElapsed={initialFoundingElapsed!} />{about.foundingBdk.subtitle ? <p className="about-founding-subtitle">{about.foundingBdk.subtitle}</p> : null}<p>{about.foundingBdk.summary}</p></div>
+        <p className="news-eyebrow">Unsere Gründung</p>
+        <div className="about-founding-lead">
+          <div className="about-founding-copy"><FoundingCounter date={about.foundingBdk.date} time={foundingTime} initialElapsed={initialFoundingElapsed!} />{about.foundingBdk.subtitle ? <p className="about-founding-subtitle">{about.foundingBdk.subtitle}</p> : null}<p>{about.foundingBdk.summary}</p></div>
+          <aside className="about-founding-resources" aria-label="Dokumente der Gründungs-BDK"><h3>Dokumente</h3><div className="about-founding-files">{about.foundingBdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}</div></aside>
+        </div>
         <div className="about-founding-gallery">{about.foundingBdk.photoIds.map((id) => { const media = mediaById.get(id); return media ? <figure key={id}><div><Image src={mediaHref(media.id)} fill sizes="(max-width: 780px) 100vw, 50vw" alt={media.alt} /></div>{media.caption ? <figcaption>{media.caption}</figcaption> : null}</figure> : null; })}</div>
-        <div className="about-founding-resources"><h3>Dokumente und weiterführende Links</h3><div className="about-founding-files">{about.foundingBdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}{about.foundingBdk.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}</div></div>
       </section> : null}
     </section>
   );

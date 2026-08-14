@@ -37,15 +37,12 @@ describe("dynamic About content", () => {
     expect(publicContent.media.find((media) => media.id === defaultAboutContent.media[0].id)?.caption).toBe(defaultAboutContent.media[0].caption);
   });
 
-  it("uses each photo caption as its alternative text without breaking legacy lengths", () => {
+  it("keeps founding photo captions as their alternative text and drops legacy BDK photos", () => {
     const content = structuredClone(defaultAboutContent);
     content.media.push({ id: "archivfoto", alt: "Alter Alternativtext", caption: "Gemeinsame Beratung im BDK", status: "draft", mediaId: "", bundledFile: "" });
-    content.media.push({ id: "kurzfoto", alt: "Alter Alternativtext", caption: "SV", status: "draft", mediaId: "", bundledFile: "" });
-    content.media.push({ id: "langfoto", alt: "Alter Alternativtext", caption: "L".repeat(500), status: "draft", mediaId: "", bundledFile: "" });
     const normalized = normalizeAboutEditorialContent(content);
-    expect(normalized.media.find((media) => media.id === "archivfoto")?.alt).toBe("Gemeinsame Beratung im BDK");
-    expect(normalized.media.find((media) => media.id === "kurzfoto")?.alt).toBe("SV");
-    expect(normalized.media.find((media) => media.id === "langfoto")?.alt).toHaveLength(500);
+    expect(normalized.media).toEqual(defaultAboutContent.media);
+    expect(normalized.media.every((media) => media.alt === media.caption)).toBe(true);
   });
 
   it("uses the explicitly designated active Vorstand", () => {
@@ -62,6 +59,57 @@ describe("dynamic About content", () => {
     const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
     expect(publicContent.currentBoard?.id).toBe("bezirksvorstand-2026-27");
     expect(publicContent.previousBoards.map((board) => board.id)).toContain("bezirksvorstand-2025-26");
+  });
+
+  it("sorts Vorstände by start date and derives their end dates", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.boards = [
+      { ...content.boards[0], id: "vorstand-2025", term: "2025/26", startDate: "2025-08-15", endDate: "", status: "draft" },
+      { ...content.boards[0], id: "vorstand-2027", term: "2027/28", startDate: "2027-08-01", endDate: "2028-12-31", status: "draft" },
+      { ...content.boards[0], id: "bezirksvorstand-2026-27", term: "2026/27", startDate: "2026-07-02", endDate: "2099-01-01", status: "draft" },
+    ];
+
+    const normalized = normalizeAboutEditorialContent(content);
+    expect(normalized.boards.map((board) => board.id)).toEqual(["vorstand-2027", "bezirksvorstand-2026-27", "vorstand-2025"]);
+    expect(normalized.boards.map((board) => board.endDate)).toEqual(["", "2027-07-31", "2026-07-01"]);
+    expect(normalized.boards.every((board) => board.status === "published")).toBe(true);
+  });
+
+  it("sorts Satzungen by effective date and derives their end dates", () => {
+    const content = structuredClone(defaultAboutContent);
+    const statute = content.documents.find((document) => document.kind === "satzung")!;
+    content.documents.push(
+      { ...statute, id: "satzung-2025", number: "0", date: "2025-01-01", effectiveFrom: "2025-01-01", effectiveUntil: "", status: "draft" },
+      { ...statute, id: "satzung-2027", number: "2", date: "2027-03-10", effectiveFrom: "2027-03-10", effectiveUntil: "2099-01-01", status: "draft" },
+    );
+
+    const normalized = normalizeAboutEditorialContent(content);
+    const statutes = normalized.documents.filter((document) => document.kind === "satzung");
+    expect(statutes.map((document) => document.id)).toEqual(["satzung-2027", "satzung-2026", "satzung-2025"]);
+    expect(statutes.map((document) => document.effectiveUntil)).toEqual(["", "2027-03-09", "2026-07-01"]);
+    expect(statutes.every((document) => document.status === "published")).toBe(true);
+  });
+
+  it("publishes BDKs without time or place and removes non-founding photos", () => {
+    const content = structuredClone(defaultAboutContent);
+    content.media.push({ id: "altes-bdk-foto", alt: "Altes Foto", caption: "Altes Foto", status: "published", mediaId: "alter-upload", bundledFile: "" });
+    content.bdks.push({
+      ...content.bdks[0],
+      id: "bdk-ohne-ort",
+      title: "BDK ohne Ortsangabe",
+      date: "2027-01-02",
+      time: "",
+      location: "",
+      documentIds: [],
+      photoIds: ["altes-bdk-foto"],
+      founding: false,
+      status: "draft",
+    });
+
+    const normalized = normalizeAboutEditorialContent(content);
+    const bdk = normalized.bdks.find((record) => record.id === "bdk-ohne-ort");
+    expect(bdk).toMatchObject({ time: "", location: "", photoIds: [], status: "published" });
+    expect(normalized.media.some((media) => media.id === "altes-bdk-foto")).toBe(false);
   });
 
   it("archives every other published Vorstand independently of its status", async () => {
@@ -115,12 +163,12 @@ describe("dynamic About content", () => {
     })).rejects.toThrow();
   });
 
-  it("does not expose draft Vorstand or BDK records publicly", () => {
+  it("ignores legacy visibility flags for Vorstand and BDK records", () => {
     const content = structuredClone(defaultAboutContent);
     content.boards.push({
       id: "vorstand-entwurf",
       term: "2027/28",
-      startDate: "2027-08-01",
+      startDate: "2026-01-01",
       endDate: "",
       message: "Dieser Text ist noch nicht freigegeben.",
       photoId: "",
@@ -143,8 +191,8 @@ describe("dynamic About content", () => {
     });
 
     const publicContent = publishedAboutContent({ articles: [], documents: [], about: content });
-    expect(publicContent.boards.some((board) => board.id === "vorstand-entwurf")).toBe(false);
-    expect(publicContent.bdks.some((bdk) => bdk.id === "bdk-entwurf")).toBe(false);
+    expect(publicContent.boards.some((board) => board.id === "vorstand-entwurf")).toBe(true);
+    expect(publicContent.bdks.some((bdk) => bdk.id === "bdk-entwurf")).toBe(true);
   });
 
   it("selects only the active board as current", () => {
@@ -157,7 +205,7 @@ describe("dynamic About content", () => {
 
   it("does not activate a future statute early", () => {
     const content = structuredClone(defaultAboutContent);
-    content.documents.push({ ...content.documents[0], id: "satzung-zukunft", title: "Zukünftige Satzung", date: "2027-01-01" });
+    content.documents.push({ ...content.documents[0], id: "satzung-zukunft", title: "Zukünftige Satzung", date: "2027-01-01", effectiveFrom: "2027-01-01" });
     const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-12");
     expect(publicContent.currentStatute?.id).toBe("satzung-2026");
     expect(publicContent.previousStatutes.some((document) => document.id === "satzung-zukunft")).toBe(false);
@@ -259,16 +307,20 @@ describe("dynamic About content", () => {
   });
 
 
-  it("rejects impossible board terms and derives document publication from the BDK", async () => {
+  it("derives document publication from its containing BDK", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-cross-fields-"));
-    await expect(updateAboutContent(directory, {
-      ...defaultAboutContent,
-      boards: [{ ...defaultAboutContent.boards[0], endDate: "2026-01-01" }],
-    })).rejects.toThrow("Ende der Amtszeit");
     const normalized = await updateAboutContent(directory, {
       ...defaultAboutContent,
       documents: defaultAboutContent.documents.map((document, index) => index === 0 ? { ...document, status: "draft" as const } : document),
     });
     expect(normalized.documents[0].status).toBe("published");
+  });
+
+  it("requires a number for every Satzung", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-about-statute-number-"));
+    await expect(updateAboutContent(directory, {
+      ...defaultAboutContent,
+      documents: defaultAboutContent.documents.map((document) => document.kind === "satzung" ? { ...document, number: "" } : document),
+    })).rejects.toThrow("Satzungsnummer");
   });
 });
