@@ -26,14 +26,14 @@ describe("dynamic About content", () => {
 
   it("keeps founding metadata and photos hardcoded while allowing document changes", () => {
     const content = structuredClone(defaultAboutContent);
-    content.bdks[0] = { ...content.bdks[0], title: "Manipulierter Titel", location: "Anderer Ort", photoIds: [], documentIds: ["satzung-2026"] };
+    content.bdks[0] = { ...content.bdks[0], title: "Manipulierter Titel", location: "Anderer Ort", photoIds: [], documentIds: ["satzung-2026", "gruendungs-bdk-einladungen-2026"] };
     content.media[0] = { ...content.media[0], caption: "Manipuliertes Foto", alt: "Manipuliertes Foto" };
 
     const publicContent = publishedAboutContent({ articles: [], documents: [], about: content }, "2026-08-14");
     expect(publicContent.foundingBdk?.title).toBe(defaultAboutContent.bdks[0].title);
     expect(publicContent.foundingBdk?.location).toBe(defaultAboutContent.bdks[0].location);
     expect(publicContent.foundingBdk?.photoIds).toEqual(defaultAboutContent.bdks[0].photoIds);
-    expect(publicContent.foundingBdk?.documentIds).toEqual(["satzung-2026"]);
+    expect(publicContent.foundingBdk?.documentIds).toEqual(["gruendungs-bdk-einladungen-2026"]);
     expect(publicContent.media.find((media) => media.id === defaultAboutContent.media[0].id)?.caption).toBe(defaultAboutContent.media[0].caption);
   });
 

@@ -73,9 +73,10 @@ function chronologicalStatutes(documents: AboutContent["documents"]) {
 export function normalizeAboutEditorialContent(about: AboutContent) {
   const defaultFounding = defaultAboutContent.bdks.find((bdk) => bdk.founding)!;
   const submittedFounding = about.bdks.find((bdk) => bdk.id === defaultFounding.id);
+  const statuteIds = new Set(about.documents.filter((document) => document.kind === "satzung").map((document) => document.id));
 
   const bdks = [
-    { ...defaultFounding, documentIds: submittedFounding?.documentIds ?? [] },
+    { ...defaultFounding, documentIds: (submittedFounding?.documentIds ?? []).filter((id) => !statuteIds.has(id)) },
     ...about.bdks.filter((bdk) => bdk.id !== defaultFounding.id).map((bdk) => ({ ...bdk, founding: false, photoIds: [], status: "published" as const })),
   ];
   const publishedDocumentIds = new Set(bdks.filter((bdk) => bdk.status === "published").flatMap((bdk) => bdk.documentIds));
