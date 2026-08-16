@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
+import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/shared/server/preview-config";
 
 describe("preview form configuration", () => {
   it("fails closed in production unless explicitly enabled", () => {

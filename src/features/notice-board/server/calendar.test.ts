@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEventCalendar } from "@/lib/calendar";
+import { createEventCalendar } from "@/features/notice-board/server/calendar";
 import type { BsvEvent } from "@/features/notice-board/domain/events";
 
 const fixture: BsvEvent = {

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { submissionRequiresPoster, validateSubmission } from "@/features/notice-board/domain/submission";
 import path from "node:path";
 import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
-import { isPreviewFormEnabled } from "@/lib/preview-config";
+import { isPreviewFormEnabled } from "@/shared/server/preview-config";
 import { storeUpload } from "@/shared/server/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
-import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/lib/public-form-rate-limit";
+import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/shared/server/public-form-rate-limit";
 
 export async function POST(request: Request) {
   if (!isPreviewFormEnabled(process.env)) {

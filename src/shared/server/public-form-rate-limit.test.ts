@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPublicFormRateLimit, resetPublicFormRateLimits } from "@/lib/public-form-rate-limit";
+import { checkPublicFormRateLimit, resetPublicFormRateLimits } from "@/shared/server/public-form-rate-limit";
 
 describe("public form rate limiting", () => {
   it("limits repeated submissions for one trusted proxy client", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateContact } from "@/lib/contact";
+import { validateContact } from "@/features/contact/domain/contact";
 
 const valid = {
   name: "Erika Muster",

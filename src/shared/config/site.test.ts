@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSiteUrl } from "@/lib/site";
+import { resolveSiteUrl } from "@/shared/config/site";
 
 describe("resolveSiteUrl", () => {
   it("uses localhost for the local preview", () => {

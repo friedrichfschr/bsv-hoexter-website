@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { validateBdkSignup } from "@/features/bdk/domain/signup";
-import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
-import { appendPreviewRecord } from "@/lib/preview-store";
+import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/shared/server/preview-config";
+import { appendPreviewRecord } from "@/shared/server/preview-store";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
-import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/lib/public-form-rate-limit";
+import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/shared/server/public-form-rate-limit";
 
 export async function POST(request: Request) {
   if (!isPreviewFormEnabled(process.env)) {

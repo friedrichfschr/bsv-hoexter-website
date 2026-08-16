@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Newsreader, Source_Sans_3 } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { siteUrl } from "@/lib/site";
+import { siteUrl } from "@/shared/config/site";
 import "./foundation.css";
 
 const sourceSans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
