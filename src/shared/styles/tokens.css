@@ -1,0 +1,65 @@
+@theme inline {
+  --color-bsv-ink: var(--color-ink);
+  --color-bsv-paper: var(--color-paper);
+  --color-bsv-surface: var(--color-surface);
+  --color-bsv-warm: var(--color-warm);
+  --color-bsv-gold: var(--color-gold);
+  --color-bsv-gold-text: var(--color-gold-text);
+  --color-bsv-board: var(--color-board);
+  --color-bsv-danger: var(--color-danger);
+  --color-bsv-border: var(--color-border);
+  --font-body: var(--font-sans);
+  --font-display: var(--font-serif);
+  --radius-bsv: var(--radius-control);
+  --shadow-bsv: var(--shadow-soft);
+}
+
+:root {
+  /* Core palette */
+  --color-ink: #20211f;
+  --color-ink-soft: #40413d;
+  --color-muted: #686860;
+  --color-paper: #fbfaf6;
+  --color-surface: #ffffff;
+  --color-warm: #f1ede2;
+  --color-gold: #a77b17;
+  --color-gold-text: #785a10;
+  --color-board: #18241f;
+  --color-border: #d9d5c9;
+  --color-danger: #a3312b;
+  --color-focus: #075fa8;
+  --color-selection: #dfc477;
+  --color-board-stage-edge: #c49a46;
+  --color-board-pin: #c4932f;
+
+  /* Component surfaces and text */
+  --color-header: rgb(251 250 246 / 96%);
+  --color-footer: #191a18;
+  --color-on-dark: #ffffff;
+  --color-footer-copy: rgb(255 255 255 / 66%);
+  --color-footer-link: rgb(255 255 255 / 78%);
+  --color-footer-muted: rgb(255 255 255 / 55%);
+  --color-footer-border: rgb(255 255 255 / 16%);
+
+  /* Shape, borders, and elevation */
+  --radius-control: 3px;
+  --border-width-control: 1px;
+  --shadow-control: 0 1px 0 rgb(32 33 31 / 4%);
+  --shadow-soft: 0 1px 2px rgb(32 33 31 / 5%), 0 10px 34px rgb(32 33 31 / 7%);
+
+
+  /* Interaction */
+  --focus-width: 3px;
+  --focus-offset: 3px;
+  --motion-fast: 150ms;
+
+  /* Layout */
+  --layout-shell: min(1180px, calc(100vw - 48px));
+  --space-section: clamp(72px, 9vw, 118px);
+}
+
+@media (max-width: 780px) {
+  :root {
+      --layout-shell: min(100% - 32px, 1180px);
+    }
+}

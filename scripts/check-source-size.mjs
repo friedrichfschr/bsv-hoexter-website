@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const SOURCE_EXTENSIONS = new Set([".css", ".ts", ".tsx"]);
 const IGNORED_DIRECTORIES = new Set([".git", ".next", "node_modules", "playwright-report", "test-results"]);
-const TEMPORARY_ALLOWLIST = new Set(["src/app/foundation.css"]);
+const TEMPORARY_ALLOWLIST = new Set();
 
 function isTestFile(filePath) {
   return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(filePath);
