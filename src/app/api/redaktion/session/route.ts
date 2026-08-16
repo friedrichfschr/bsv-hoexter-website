@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 import {
   clearEditorialLoginFailures,
   createEditorialSessionToken,
@@ -9,7 +9,7 @@ import {
   isEditorialLoginAllowed,
   isEditorialApiKeyValid,
   recordEditorialLoginFailure,
-} from "@/lib/editorial-auth";
+} from "@/shared/server/editorial-auth";
 
 export const runtime = "nodejs";
 

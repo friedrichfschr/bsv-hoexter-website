@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { EditorialDashboard } from "@/features/editorial/EditorialDashboard";
 import { EditorialLogin } from "@/features/editorial/EditorialLogin";
-import { EDITORIAL_SESSION_COOKIE, isEditorialSessionAuthorized } from "@/lib/editorial-auth";
+import { EDITORIAL_SESSION_COOKIE, isEditorialSessionAuthorized } from "@/shared/server/editorial-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Redaktion | BSV Höxter", robots: { index: false, follow: false } };

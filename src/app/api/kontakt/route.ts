@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { validateContact } from "@/lib/contact";
 import { appendPreviewRecord } from "@/lib/preview-store";
 import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/lib/public-form-rate-limit";
 
 export async function POST(request: Request) {

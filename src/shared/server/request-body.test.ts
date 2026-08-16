@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 describe("bufferRequestBody", () => {
   it("rebuilds a request whose body stays within the limit", async () => {

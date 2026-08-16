@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { replaceEditorialContent } from "@/lib/articles";
-import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
 import { readEditorialContent } from "@/lib/editorial";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

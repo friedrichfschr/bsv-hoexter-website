@@ -11,7 +11,7 @@ import {
   updateAboutContent,
 } from "@/lib/about-content";
 import { replaceEditorialContent } from "@/lib/articles";
-import { storeUpload } from "@/lib/uploads";
+import { storeUpload } from "@/shared/server/uploads";
 
 describe("dynamic About content", () => {
   it("seeds the founding BDK documents while keeping the Satzung separate", () => {

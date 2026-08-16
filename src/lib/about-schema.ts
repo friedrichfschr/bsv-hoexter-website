@@ -1,20 +1,11 @@
 import { z } from "zod";
+import { calendarDateSchema } from "@/shared/domain/calendar-date";
 
 const identifier = z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/);
 const optionalIdentifier = z.string().trim().max(100).refine((value) => !value || /^[a-z0-9-]+$/.test(value));
 const status = z.enum(["draft", "published"]);
 
-function isValidIsoDate(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
-}
-
-const isoDate = z.string().refine(isValidIsoDate, "Bitte ein gültiges Datum angeben.");
+const isoDate = calendarDateSchema;
 const optionalIsoDate = z.union([z.literal(""), isoDate]);
 const optionalTime = z.union([z.literal(""), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)]);
 

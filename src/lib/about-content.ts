@@ -2,7 +2,7 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import { aboutContentSchema, defaultAboutContent, type AboutContent } from "@/lib/about-schema";
 import { mutateEditorialContent, readEditorialContent, resolveEditorialDirectory, type EditorialContent } from "@/lib/editorial";
-import { readStoredUpload, removeStoredUpload } from "@/lib/uploads";
+import { readStoredUpload, removeStoredUpload } from "@/shared/server/uploads";
 
 function assertUniqueIds(records: { id: string }[], label: string) {
   const ids = new Set<string>();

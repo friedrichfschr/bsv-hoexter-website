@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
-
-const calendarDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bitte ein gültiges Datum wählen.").refine((value) => {
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
-}, "Bitte ein gültiges Datum wählen.");
+import { calendarDateSchema } from "@/shared/domain/calendar-date";
 
 export const submissionKinds = ["poster", "event", "both"] as const;
 export type SubmissionKind = (typeof submissionKinds)[number];
@@ -24,8 +19,8 @@ export const submissionSchema = z.object({
   organizer: z.string().trim().max(120).optional().default(""),
   category: z.union([z.literal(""), z.enum(eventSubmissionCategories)]).optional().default(""),
   website: optionalWebsite,
-  date: z.union([z.literal(""), calendarDate]).optional().default(""),
-  posterExpiresAt: z.union([z.literal(""), calendarDate]).optional().default(""),
+  date: z.union([z.literal(""), calendarDateSchema]).optional().default(""),
+  posterExpiresAt: z.union([z.literal(""), calendarDateSchema]).optional().default(""),
   location: z.string().trim().max(160).optional().default(""),
   ageRange: z.string().trim().max(100).optional().default(""),
   contactName: z.string().trim().max(100).optional().default(""),

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
 import { purgeRejectedEntries } from "@/features/notice-board/server/moderation";
 
 export const runtime = "nodejs";

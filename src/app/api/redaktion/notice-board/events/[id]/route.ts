@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
 import { updateEventEntry } from "@/features/notice-board/server/moderation";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 type Context = { params: Promise<{ id: string }> };
 export const runtime = "nodejs";

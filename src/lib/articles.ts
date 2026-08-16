@@ -8,7 +8,7 @@ import {
   resolveEditorialDirectory,
   type Article,
 } from "@/lib/editorial";
-import { readStoredUpload } from "@/lib/uploads";
+import { readStoredUpload } from "@/shared/server/uploads";
 import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/lib/about-content";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });

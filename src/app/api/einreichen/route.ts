@@ -3,8 +3,8 @@ import { submissionRequiresPoster, validateSubmission } from "@/features/notice-
 import path from "node:path";
 import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
 import { isPreviewFormEnabled } from "@/lib/preview-config";
-import { storeUpload } from "@/lib/uploads";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { storeUpload } from "@/shared/server/uploads";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/lib/public-form-rate-limit";
 
 export async function POST(request: Request) {

@@ -1,9 +1,9 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
 import { resolveEditorialDirectory } from "@/lib/editorial";
-import { readStoredUpload, removeStoredUpload, storeUpload } from "@/lib/uploads";
-import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";
+import { readStoredUpload, removeStoredUpload, storeUpload } from "@/shared/server/uploads";
+import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 export const runtime = "nodejs";
 

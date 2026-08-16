@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { authorizeEditorialRequest } from "@/lib/editorial-auth";
+import { authorizeEditorialRequest } from "@/shared/server/editorial-auth";
 import { resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
-import { readStoredUpload } from "@/lib/uploads";
+import { readStoredUpload } from "@/shared/server/uploads";
 
 type Context = { params: Promise<{ id: string }> };
 export const runtime = "nodejs";

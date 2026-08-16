@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createArticle, replaceEditorialContent, updateArticle } from "@/lib/articles";
 import { emptyEditorialContent, publishedArticleBySlug, publishedArticles, articleSchema } from "@/lib/editorial";
 import { readEditorialContent, writeEditorialContent } from "@/lib/editorial";
-import { storeUpload } from "@/lib/uploads";
+import { storeUpload } from "@/shared/server/uploads";
 import { defaultAboutContent, updateAboutContent } from "@/lib/about-content";
 
 const draftInput = {

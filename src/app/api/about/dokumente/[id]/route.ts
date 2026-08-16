@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { publishedAboutContent } from "@/lib/about-content";
 import { readEditorialContent, resolveEditorialDirectory } from "@/lib/editorial";
-import { readStoredUpload } from "@/lib/uploads";
+import { readStoredUpload } from "@/shared/server/uploads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

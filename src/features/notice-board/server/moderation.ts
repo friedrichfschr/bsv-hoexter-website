@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
@@ -9,13 +9,9 @@ import {
   submissionSchema,
   type BoardSubmission,
 } from "@/features/notice-board/domain/submission";
-import { readStoredUpload, removeStoredUpload, type StoredUpload } from "@/lib/uploads";
-
-const calendarDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
-}, "Bitte ein gültiges Datum angeben.");
+import { readStoredUpload, removeStoredUpload, type StoredUpload } from "@/shared/server/uploads";
+import { readValidatedJson, withSerializedMutation, writeJsonAtomically } from "@/shared/server/json-file-store";
+import { calendarDateSchema } from "@/shared/domain/calendar-date";
 const identifierSchema = z.string().uuid();
 const statusSchema = z.enum(["pending", "approved", "rejected"]);
 const optionalIdentifierSchema = z.union([z.literal(""), identifierSchema]).default("");
@@ -105,45 +101,21 @@ export type ModeratedPoster = z.infer<typeof moderatedPosterSchema>;
 export type PosterPlacement = z.infer<typeof posterPlacementSchema>;
 
 const emptyNoticeBoardContent: NoticeBoardContent = { events: [], posters: [] };
-const writeQueues = new Map<string, Promise<void>>();
 
 export function resolveNoticeBoardDirectory(environment: NodeJS.ProcessEnv = process.env) {
   return path.resolve(/* turbopackIgnore: true */ environment.EDITORIAL_CONTENT_DIRECTORY || ".editorial-content");
 }
 
-async function enqueueWrite<T>(directory: string, operation: () => Promise<T>) {
-  const previous = writeQueues.get(directory) ?? Promise.resolve();
-  let release!: () => void;
-  const current = new Promise<void>((resolve) => { release = resolve; });
-  writeQueues.set(directory, current);
-  await previous;
-  try {
-    return await operation();
-  } finally {
-    release();
-    if (writeQueues.get(directory) === current) writeQueues.delete(directory);
-  }
-}
-
 async function writeNoticeBoardFile(directory: string, content: NoticeBoardContent) {
-  await mkdir(directory, { recursive: true });
-  const temporary = path.join(directory, `notice-board.${process.pid}.${randomUUID()}.tmp`);
-  await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporary, path.join(directory, "notice-board.json"));
+  await writeJsonAtomically(path.join(directory, "notice-board.json"), content);
 }
 
 export async function readNoticeBoardContent(directory = resolveNoticeBoardDirectory()): Promise<NoticeBoardContent> {
-  try {
-    const raw = await readFile(path.join(directory, "notice-board.json"), "utf8");
-    return noticeBoardContentSchema.parse(JSON.parse(raw));
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return structuredClone(emptyNoticeBoardContent);
-    throw error;
-  }
+  return readValidatedJson(path.join(directory, "notice-board.json"), noticeBoardContentSchema, emptyNoticeBoardContent);
 }
 
 async function mutateNoticeBoardContent<T>(directory: string, mutation: (content: NoticeBoardContent) => { content: unknown; result: T } | Promise<{ content: unknown; result: T }>) {
-  return enqueueWrite(directory, async () => {
+  return withSerializedMutation(path.join(directory, "notice-board.json"), async () => {
     const current = await readNoticeBoardContent(directory);
     const changed = await mutation(current);
     const content = noticeBoardContentSchema.parse(changed.content);

@@ -40,3 +40,14 @@ test("rejects feature-owned modules in generic lib and domain folders", () => {
     "src/domain/notice-board.ts",
   ]);
 });
+
+test("keeps reusable server infrastructure in shared", () => {
+  assert.deepEqual(evaluateFeatureOwnership([
+    "src/lib/uploads.ts",
+    "src/lib/request-body.test.ts",
+    "src/shared/server/editorial-auth.ts",
+  ]), [
+    "src/lib/uploads.ts",
+    "src/lib/request-body.test.ts",
+  ]);
+});

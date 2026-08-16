@@ -3,7 +3,7 @@ import { mkdtemp, readFile, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { readStoredUpload, storeUpload } from "@/lib/uploads";
+import { readStoredUpload, storeUpload } from "@/shared/server/uploads";
 import {
   createNoticeBoardSubmission,
   publicEventEntries,

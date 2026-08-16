@@ -7,7 +7,7 @@ import {
   isEditorialLoginAllowed,
   isEditorialRequestAuthorized,
   isEditorialSessionAuthorized,
-} from "@/lib/editorial-auth";
+} from "@/shared/server/editorial-auth";
 
 describe("editorial API authorization", () => {
   it("uses a configured bearer secret and rejects missing configuration", () => {
