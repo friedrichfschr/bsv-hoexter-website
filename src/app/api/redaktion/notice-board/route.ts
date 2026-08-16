@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/lib/editorial-auth";
-import { purgeRejectedEntries } from "@/lib/notice-board-moderation";
+import { purgeRejectedEntries } from "@/features/notice-board/server/moderation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { publicPosterEntries, readNoticeBoardContent, resolveNoticeBoardDirectory } from "@/lib/notice-board-moderation";
+import { publicPosterEntries, readNoticeBoardContent, resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
 import { readStoredUpload } from "@/lib/uploads";
 
 type Context = { params: Promise<{ id: string }> };

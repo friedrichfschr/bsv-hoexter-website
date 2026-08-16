@@ -1,8 +1,8 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { eventSubmissionCategories } from "@/domain/events";
-import type { ModeratedEvent, NoticeBoardContent } from "@/lib/notice-board-moderation";
+import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
+import type { ModeratedEvent, NoticeBoardContent } from "@/features/notice-board/server/moderation";
 
 const statusLabels = { pending: "Ausstehend", approved: "Freigegeben", rejected: "Abgelehnt" } as const;
 

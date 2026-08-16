@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEventCalendar } from "@/lib/calendar";
-import type { BsvEvent } from "@/domain/events";
+import type { BsvEvent } from "@/features/notice-board/domain/events";
 
 const fixture: BsvEvent = {
   slug: "test-event",

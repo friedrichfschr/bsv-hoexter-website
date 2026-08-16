@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { eventSubmissionCategories } from "@/domain/events";
-import { submissionIncludesEvent, submissionRequiresPoster, type SubmissionKind } from "@/lib/submission";
+import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
+import { submissionIncludesEvent, submissionRequiresPoster, type SubmissionKind } from "@/features/notice-board/domain/submission";
 
 const submissionOptions: readonly { value: SubmissionKind; label: string }[] = [
   { value: "poster", label: "Nur Poster" },

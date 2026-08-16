@@ -12,7 +12,7 @@ import {
   readNoticeBoardContent,
   updateEventEntry,
   updatePosterEntry,
-} from "@/lib/notice-board-moderation";
+} from "@/features/notice-board/server/moderation";
 
 const eventSubmission = {
   submissionKind: "both" as const,

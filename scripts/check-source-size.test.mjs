@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { evaluateSourceSizes } from "./check-source-size.mjs";
+import { evaluateFeatureOwnership, evaluateSourceSizes } from "./check-source-size.mjs";
 
 test("rejects authored source files above 700 lines", () => {
   const result = evaluateSourceSizes([
@@ -26,4 +26,17 @@ test("ignores generated and test artifacts", () => {
   ]);
 
   assert.deepEqual(result, { errors: [], warnings: [] });
+});
+
+test("rejects feature-owned modules in generic lib and domain folders", () => {
+  assert.deepEqual(evaluateFeatureOwnership([
+    "src/lib/bdk-signup.ts",
+    "src/lib/submission.ts",
+    "src/domain/notice-board.ts",
+    "src/features/news/article-model.ts",
+  ]), [
+    "src/lib/bdk-signup.ts",
+    "src/lib/submission.ts",
+    "src/domain/notice-board.ts",
+  ]);
 });

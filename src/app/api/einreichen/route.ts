@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { submissionRequiresPoster, validateSubmission } from "@/lib/submission";
+import { submissionRequiresPoster, validateSubmission } from "@/features/notice-board/domain/submission";
 import path from "node:path";
-import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/lib/notice-board-moderation";
+import { createNoticeBoardSubmission, resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
 import { isPreviewFormEnabled } from "@/lib/preview-config";
 import { storeUpload } from "@/lib/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { eventSubmissionCategories } from "@/domain/events";
-import type { ModeratedEvent } from "@/lib/notice-board-moderation";
+import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
+import type { ModeratedEvent } from "@/features/notice-board/server/moderation";
 
 export function EventList({ events }: { events: ModeratedEvent[] }) {
   const [category, setCategory] = useState<string>("Alle");

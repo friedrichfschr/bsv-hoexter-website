@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { validateBdkSignup } from "@/lib/bdk-signup";
+import { validateBdkSignup } from "@/features/bdk/domain/signup";
 import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/lib/preview-config";
 import { appendPreviewRecord } from "@/lib/preview-store";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/lib/request-body";

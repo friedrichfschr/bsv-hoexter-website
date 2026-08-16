@@ -25,6 +25,17 @@ export function evaluateSourceSizes(files, allowlist = TEMPORARY_ALLOWLIST) {
   return { errors, warnings };
 }
 
+export function evaluateFeatureOwnership(paths) {
+  const legacyFeatureModules = [
+    /^src\/lib\/bdk-signup(?:\.test)?\.ts$/,
+    /^src\/lib\/(?:submission|notice-board-moderation)(?:\.test)?\.ts$/,
+    /^src\/domain\/(?:events|notice-board)(?:\.test)?\.ts$/,
+  ];
+  return paths
+    .map((filePath) => filePath.replaceAll("\\", "/"))
+    .filter((filePath) => legacyFeatureModules.some((pattern) => pattern.test(filePath)));
+}
+
 async function collectSourceFiles(directory, root = directory) {
   const files = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -43,8 +54,10 @@ async function main() {
   const root = process.cwd();
   const files = await collectSourceFiles(root);
   const result = evaluateSourceSizes(files);
+  const ownershipErrors = evaluateFeatureOwnership(files.map((file) => file.path));
   for (const warning of result.warnings) console.warn(`Structure warning: ${warning}`);
-  if (result.errors.length) {
+  for (const error of ownershipErrors) console.error(`Structure error: move feature-owned module ${error}`);
+  if (result.errors.length || ownershipErrors.length) {
     for (const error of result.errors) console.error(`Structure error: ${error}`);
     process.exitCode = 1;
   }

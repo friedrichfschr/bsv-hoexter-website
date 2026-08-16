@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { noticeBoardCapacity, noticeBoards } from "./notice-board";
+import { noticeBoardCapacity, noticeBoards } from "./placement";
 
 describe("notice board layout", () => {
   it("provides the two board canvases without hard-coded posters", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateBdkSignup } from "@/lib/bdk-signup";
+import { validateBdkSignup } from "@/features/bdk/domain/signup";
 
 const valid = {
   name: "Erika Muster",

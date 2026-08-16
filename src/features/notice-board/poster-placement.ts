@@ -1,4 +1,4 @@
-import type { PosterPlacement } from "@/lib/notice-board-moderation";
+import type { PosterPlacement } from "@/features/notice-board/server/moderation";
 
 function roundToTenth(value: number) {
   return Math.round((value + Number.EPSILON) * 10) / 10;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterEvents, type BsvEvent } from "@/domain/events";
+import { filterEvents, type BsvEvent } from "@/features/notice-board/domain/events";
 
 function fixture(overrides: Partial<BsvEvent> = {}): BsvEvent {
   return {

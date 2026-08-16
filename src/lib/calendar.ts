@@ -1,4 +1,4 @@
-import type { BsvEvent, EventSession } from "@/domain/events";
+import type { BsvEvent, EventSession } from "@/features/notice-board/domain/events";
 
 const berlinFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Europe/Berlin",

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { noticeBoards } from "@/domain/notice-board";
+import { noticeBoards } from "@/features/notice-board/domain/placement";
 import { PosterLightbox } from "@/features/notice-board/PosterLightbox";
 import { EventList } from "@/features/notice-board/EventList";
-import { publicEventEntries, publicPosterEntries, readNoticeBoardContent } from "@/lib/notice-board-moderation";
+import { publicEventEntries, publicPosterEntries, readNoticeBoardContent } from "@/features/notice-board/server/moderation";
 
 type PosterStyle = CSSProperties & Record<"--poster-left" | "--poster-top" | "--poster-width" | "--poster-height" | "--poster-rotation", string>;
 

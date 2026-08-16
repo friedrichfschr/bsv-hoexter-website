@@ -2,13 +2,13 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { eventSubmissionCategories } from "@/domain/events";
+import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
 import {
   submissionIncludesEvent,
   submissionRequiresPoster,
   submissionSchema,
   type BoardSubmission,
-} from "@/lib/submission";
+} from "@/features/notice-board/domain/submission";
 import { readStoredUpload, removeStoredUpload, type StoredUpload } from "@/lib/uploads";
 
 const calendarDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {

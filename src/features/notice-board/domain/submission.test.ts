@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { submissionIncludesEvent, submissionRequiresPoster, validateSubmission } from "@/lib/submission";
+import { submissionIncludesEvent, submissionRequiresPoster, validateSubmission } from "@/features/notice-board/domain/submission";
 
 const valid = {
   submissionKind: "event",

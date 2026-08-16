@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { authorizeEditorialRequest } from "@/lib/editorial-auth";
-import { resolveNoticeBoardDirectory } from "@/lib/notice-board-moderation";
+import { resolveNoticeBoardDirectory } from "@/features/notice-board/server/moderation";
 import { readStoredUpload } from "@/lib/uploads";
 
 type Context = { params: Promise<{ id: string }> };

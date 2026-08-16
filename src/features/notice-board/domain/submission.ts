@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eventSubmissionCategories } from "@/domain/events";
+import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
 
 const calendarDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bitte ein gültiges Datum wählen.").refine((value) => {
   const [year, month, day] = value.split("-").map(Number);
