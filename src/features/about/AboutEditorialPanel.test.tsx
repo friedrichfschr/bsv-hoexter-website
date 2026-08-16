@@ -2,7 +2,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AboutEditorialPanel } from "@/features/about/AboutEditorialPanel";
-import { defaultAboutContent } from "@/lib/about-schema";
+import { defaultAboutContent } from "@/features/about/domain/content-schema";
 
 describe("AboutEditorialPanel", () => {
   afterEach(() => vi.restoreAllMocks());

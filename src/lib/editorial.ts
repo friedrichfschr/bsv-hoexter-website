@@ -1,6 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
-import { aboutContentSchema, defaultAboutContent } from "@/lib/about-schema";
+import { aboutContentSchema, defaultAboutContent } from "@/features/about/domain/content-schema";
 import { readValidatedJson, withSerializedMutation, writeJsonAtomically } from "@/shared/server/json-file-store";
 
 const status = z.enum(["draft", "published"]);

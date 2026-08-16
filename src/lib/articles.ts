@@ -9,7 +9,7 @@ import {
   type Article,
 } from "@/lib/editorial";
 import { readStoredUpload } from "@/shared/server/uploads";
-import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/lib/about-content";
+import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/features/about/server/content-service";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });
 export type ArticleMutation = z.input<typeof articleMutationSchema>;

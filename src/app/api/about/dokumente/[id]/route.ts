@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { publishedAboutContent } from "@/lib/about-content";
+import { publishedAboutContent } from "@/features/about/server/content-service";
 import { readEditorialContent, resolveEditorialDirectory } from "@/lib/editorial";
 import { readStoredUpload } from "@/shared/server/uploads";
 

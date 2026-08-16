@@ -9,7 +9,7 @@ import {
   publishedAboutContent,
   readEditorialContent,
   updateAboutContent,
-} from "@/lib/about-content";
+} from "@/features/about/server/content-service";
 import { replaceEditorialContent } from "@/lib/articles";
 import { storeUpload } from "@/shared/server/uploads";
 

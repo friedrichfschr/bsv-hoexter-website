@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { publishedAboutContent } from "@/lib/about-content";
-import type { AboutContent } from "@/lib/about-schema";
+import { publishedAboutContent } from "@/features/about/server/content-service";
+import type { AboutContent } from "@/features/about/domain/content-schema";
 import { readEditorialContent } from "@/lib/editorial";
 import { BoardPhotoCarousel } from "@/features/about/BoardPhotoCarousel";
 import { ExpandableArchive } from "@/features/about/ExpandableArchive";
 import { EntryPreview } from "@/features/about/EntryPreview";
 import { FoundingCounter } from "@/features/about/FoundingCounter";
-import { elapsedSinceFounding } from "@/lib/founding-time";
+import { elapsedSinceFounding } from "@/features/about/domain/founding-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Über uns | BSV Höxter", description: "Aufgaben, Bezirksvorstand, Satzung und Geschichte der BSV Höxter." };

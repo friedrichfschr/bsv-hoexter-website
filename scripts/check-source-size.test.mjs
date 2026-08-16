@@ -32,11 +32,15 @@ test("rejects feature-owned modules in generic lib and domain folders", () => {
   assert.deepEqual(evaluateFeatureOwnership([
     "src/lib/bdk-signup.ts",
     "src/lib/submission.ts",
+    "src/lib/about-content.ts",
+    "src/lib/about-schema.ts",
     "src/domain/notice-board.ts",
     "src/features/news/article-model.ts",
   ]), [
     "src/lib/bdk-signup.ts",
     "src/lib/submission.ts",
+    "src/lib/about-content.ts",
+    "src/lib/about-schema.ts",
     "src/domain/notice-board.ts",
   ]);
 });

@@ -7,7 +7,7 @@ import { createArticle, replaceEditorialContent, updateArticle } from "@/lib/art
 import { emptyEditorialContent, publishedArticleBySlug, publishedArticles, articleSchema } from "@/lib/editorial";
 import { readEditorialContent, writeEditorialContent } from "@/lib/editorial";
 import { storeUpload } from "@/shared/server/uploads";
-import { defaultAboutContent, updateAboutContent } from "@/lib/about-content";
+import { defaultAboutContent, updateAboutContent } from "@/features/about/server/content-service";
 
 const draftInput = {
   slug: "erste-meldung",

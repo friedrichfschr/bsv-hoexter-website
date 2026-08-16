@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { elapsedSinceFounding, type FoundingElapsed } from "@/lib/founding-time";
+import { elapsedSinceFounding, type FoundingElapsed } from "@/features/about/domain/founding-time";
 
 const units: Array<[keyof FoundingElapsed, string, string]> = [
   ["years", "Jahr", "Jahren"],

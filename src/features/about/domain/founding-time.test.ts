@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { elapsedSinceFounding } from "@/lib/founding-time";
+import { elapsedSinceFounding } from "@/features/about/domain/founding-time";
 
 describe("founding elapsed time", () => {
   it("returns calendar years, months, days and clock units", () => {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { editorialContentSchema, readEditorialContent, writeEditorialContent } from "@/lib/editorial";
-import { defaultAboutContent } from "@/lib/about-schema";
+import { defaultAboutContent } from "@/features/about/domain/content-schema";
 
 const content = {
   about: defaultAboutContent,

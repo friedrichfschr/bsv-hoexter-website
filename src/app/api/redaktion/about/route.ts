@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeAboutEditorialContent, updateAboutContent } from "@/lib/about-content";
+import { normalizeAboutEditorialContent, updateAboutContent } from "@/features/about/server/content-service";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
 import { readEditorialContent } from "@/lib/editorial";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";

@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
-import { aboutContentSchema, defaultAboutContent, type AboutContent } from "@/lib/about-schema";
+import { aboutContentSchema, defaultAboutContent, type AboutContent } from "@/features/about/domain/content-schema";
 import { mutateEditorialContent, readEditorialContent, resolveEditorialDirectory, type EditorialContent } from "@/lib/editorial";
 import { readStoredUpload, removeStoredUpload } from "@/shared/server/uploads";
 
