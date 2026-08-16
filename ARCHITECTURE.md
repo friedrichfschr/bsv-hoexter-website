@@ -81,9 +81,17 @@ The current JSON/JSONL files and private upload directories are local adapters, 
 
 A future database migration must preserve feature-level operations rather than expose SQL or ORM calls to pages and route handlers. Introduce repository interfaces only when a real second adapter or migration is being built. See `docs/decisions/002-persistence-boundaries.md`.
 
+### BDK data and file boundary
+
+BDK events, signups, cancellation/reactivation, deletion, export, and retention belong behind the BDK repository/service boundary. Pages and Route Handlers must use those operations and must not depend on a JSON layout, filesystem paths, SQL, or an ORM. The local serialized JSON adapter and private upload directory are development scaffolding only; production requires a durable database and object storage while preserving the same service operations and opaque event/file identifiers.
+
+Invitation and Delegiertenschlüssel PDFs remain private at rest and are delivered only through controlled BDK routes. Upload replacement or event reset must persist the new state before deleting the superseded object, and abandoned uploads must be cleaned up explicitly. Active and cancelled signup records are retained through the event date plus 14 calendar days and then removed by the BDK service; production needs a scheduled retention job in addition to cleanup during reads and mutations.
+
+A database adapter must keep event-to-signup relationships, immutable event identifiers, event snapshots needed by exports, status transitions, and retention cleanup transactional. An object-storage adapter must keep validation, ownership checks, controlled delivery, replacement cleanup, and reset cleanup equivalent to the local adapter.
+
 ## Future email
 
-Forms and route handlers must not send mail directly. When notifications are implemented, define a feature command/event and a replaceable mail transport, then send only after durable state changes succeed. IMAP is mailbox access, not an outbound delivery transport; SMTP or a provider API must be selected separately. See `docs/decisions/003-email-boundary.md`.
+Forms and route handlers must not send mail directly. When notifications are implemented, define a feature command/event and a replaceable mail transport, then send only after durable state changes succeed. The current BDK flow sends no confirmation, cancellation, or administrative email and stores no mail credentials. Future BDK notifications require an outbound SMTP service or provider API; IMAP only accesses a mailbox and cannot send mail. See `docs/decisions/003-email-boundary.md`.
 
 ## Security boundaries
 
