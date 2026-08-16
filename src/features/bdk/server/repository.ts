@@ -23,7 +23,7 @@ export interface BdkRepository {
   setSignupStatus(id: string, status: BdkSignupStatus): Promise<BdkSignupRecord>;
   deleteSignup(id: string): Promise<void>;
   setDocument(kind: "invitation" | "delegate-key", uploadId: string): Promise<{ event: BdkEvent; previousId: string }>;
-  prepareNewEvent(today?: string): Promise<BdkEvent>;
+  prepareNewEvent(today?: string): Promise<{ event: BdkEvent; previousDocumentIds: string[] }>;
 }
 
 export class DuplicateBdkSignupError extends Error {}
@@ -143,6 +143,9 @@ export class LocalBdkRepository implements BdkRepository {
 
   setDocument(kind: "invitation" | "delegate-key", uploadId: string) {
     return this.transaction((state, now) => {
+      if (kind === "invitation" && uploadId && !state.event.date) {
+        throw new Error("Bitte zuerst einen Termin für die BDK festlegen.");
+      }
       const field = kind === "invitation" ? "invitationId" : "delegateKeyId";
       const previousId = state.event[field];
       state.event = { ...state.event, [field]: uploadId, updatedAt: now.toISOString() };
@@ -155,8 +158,9 @@ export class LocalBdkRepository implements BdkRepository {
       if (!hasBdkEventPassed(state.event, today ?? berlinCalendarDate(now))) {
         throw new BdkEventNotPassedError("Eine neue BDK kann erst nach dem aktuellen Termin vorbereitet werden.");
       }
+      const previousDocumentIds = [state.event.invitationId, state.event.delegateKeyId].filter(Boolean);
       state.event = createPreparedBdkEvent(now);
-      return structuredClone(state.event);
+      return { event: structuredClone(state.event), previousDocumentIds };
     });
   }
 }

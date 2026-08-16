@@ -66,10 +66,22 @@ describe("LocalBdkRepository", () => {
     const repo = await repository();
     await repo.updateEvent({ title: "BDK August", subtitle: "", date: "2026-08-01", time: "10:00", location: "Brakel" });
     const signupRecord = await repo.createSignup(signup("retained@example.org"));
+    await repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111");
+    await repo.setDocument("delegate-key", "22222222-2222-4222-8222-222222222222");
     const next = await repo.prepareNewEvent("2026-08-02");
-    expect(next.id).not.toBe(signupRecord.eventId);
-    expect(next).toMatchObject({ date: "", invitationId: "", delegateKeyId: "" });
+    expect(next.event.id).not.toBe(signupRecord.eventId);
+    expect(next.event).toMatchObject({ date: "", invitationId: "", delegateKeyId: "" });
+    expect(next.previousDocumentIds).toEqual([
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+    ]);
     expect((await repo.read()).signups.map((record) => record.id)).toContain(signupRecord.id);
+  });
+
+  it("does not attach an invitation to a prepared event without a date", async () => {
+    const repo = await repository();
+    await expect(repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111"))
+      .rejects.toThrow("Termin");
   });
 
   it("retains records through day 14 and removes every status after it", async () => {

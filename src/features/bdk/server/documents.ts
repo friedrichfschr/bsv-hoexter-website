@@ -64,11 +64,8 @@ export class BdkDocumentService {
   }
 
   async prepareNewEvent(today?: string) {
-    const previous = await this.repository.read();
-    const event = await this.repository.prepareNewEvent(today);
-    await Promise.all([previous.event.invitationId, previous.event.delegateKeyId]
-      .filter(Boolean)
-      .map((id) => this.removeStored(id)));
+    const { event, previousDocumentIds } = await this.repository.prepareNewEvent(today);
+    await Promise.all(previousDocumentIds.map((id) => this.removeStored(id)));
     return event;
   }
 
