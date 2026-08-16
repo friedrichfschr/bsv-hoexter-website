@@ -1,5 +1,5 @@
 import { expect, request as playwrightRequest, test } from "@playwright/test";
-import type { Article } from "@/lib/editorial";
+import type { Article } from "@/features/editorial/server/content-store";
 
 const editorialKey = "e2e-editorial-key";
 const publishedArticle: Article = {

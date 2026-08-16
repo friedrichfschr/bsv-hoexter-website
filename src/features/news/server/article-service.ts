@@ -7,7 +7,7 @@ import {
   mutateEditorialContent,
   resolveEditorialDirectory,
   type Article,
-} from "@/lib/editorial";
+} from "@/features/editorial/server/content-store";
 import { readStoredUpload } from "@/shared/server/uploads";
 import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/features/about/server/content-service";
 

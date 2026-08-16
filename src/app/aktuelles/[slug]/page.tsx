@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ArticleDetail } from "@/features/news/ArticleDetail";
-import { publishedArticleBySlug, readEditorialContent } from "@/lib/editorial";
+import { publishedArticleBySlug, readEditorialContent } from "@/features/editorial/server/content-store";
 
 export const dynamic = "force-dynamic";
 

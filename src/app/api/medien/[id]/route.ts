@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { readEditorialContent, resolveEditorialDirectory } from "@/lib/editorial";
+import { readEditorialContent, resolveEditorialDirectory } from "@/features/editorial/server/content-store";
 import { readStoredUpload } from "@/shared/server/uploads";
 
 export const runtime = "nodejs";

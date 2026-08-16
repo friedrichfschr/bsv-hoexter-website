@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
-import { updateArticle } from "@/lib/articles";
+import { updateArticle } from "@/features/news/server/article-service";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 type Context = { params: Promise<{ id: string }> };

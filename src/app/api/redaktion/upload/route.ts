@@ -1,7 +1,7 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
-import { resolveEditorialDirectory } from "@/lib/editorial";
+import { resolveEditorialDirectory } from "@/features/editorial/server/content-store";
 import { readStoredUpload, removeStoredUpload, storeUpload } from "@/shared/server/uploads";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 

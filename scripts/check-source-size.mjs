@@ -30,6 +30,7 @@ export function evaluateFeatureOwnership(paths) {
     /^src\/lib\/bdk-signup(?:\.test)?\.ts$/,
     /^src\/lib\/(?:submission|notice-board-moderation)(?:\.test)?\.ts$/,
     /^src\/lib\/(?:about-content|about-schema)(?:\.test)?\.ts$/,
+    /^src\/lib\/(?:articles|editorial)(?:\.test)?\.ts$/,
     /^src\/lib\/(?:editorial-auth|request-body|uploads)(?:\.test)?\.ts$/,
     /^src\/domain\/(?:events|notice-board)(?:\.test)?\.ts$/,
   ];

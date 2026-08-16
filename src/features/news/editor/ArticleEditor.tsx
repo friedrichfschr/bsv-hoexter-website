@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import type { Article } from "@/lib/editorial";
+import type { Article } from "@/features/editorial/server/content-store";
 import { formatArticleDate } from "@/features/news/article-model";
 
 type EditorValues = {

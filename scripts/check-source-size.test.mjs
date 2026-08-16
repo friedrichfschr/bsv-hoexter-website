@@ -34,6 +34,8 @@ test("rejects feature-owned modules in generic lib and domain folders", () => {
     "src/lib/submission.ts",
     "src/lib/about-content.ts",
     "src/lib/about-schema.ts",
+    "src/lib/articles.ts",
+    "src/lib/editorial.ts",
     "src/domain/notice-board.ts",
     "src/features/news/article-model.ts",
   ]), [
@@ -41,6 +43,8 @@ test("rejects feature-owned modules in generic lib and domain folders", () => {
     "src/lib/submission.ts",
     "src/lib/about-content.ts",
     "src/lib/about-schema.ts",
+    "src/lib/articles.ts",
+    "src/lib/editorial.ts",
     "src/domain/notice-board.ts",
   ]);
 });

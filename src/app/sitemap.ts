@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { publishedArticles, readEditorialContent } from "@/lib/editorial";
+import { publishedArticles, readEditorialContent } from "@/features/editorial/server/content-store";
 import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";

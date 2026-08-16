@@ -1,5 +1,5 @@
 import { ArticleIndex } from "@/features/news/ArticleIndex";
-import { readEditorialContent, publishedArticles } from "@/lib/editorial";
+import { readEditorialContent, publishedArticles } from "@/features/editorial/server/content-store";
 
 export const dynamic = "force-dynamic";
 

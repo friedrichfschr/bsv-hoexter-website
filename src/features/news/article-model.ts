@@ -1,4 +1,4 @@
-import type { Article } from "@/lib/editorial";
+import type { Article } from "@/features/editorial/server/content-store";
 
 export function formatArticleDate(date: string) {
   return new Intl.DateTimeFormat("de-DE", { dateStyle: "long" }).format(new Date(`${date}T12:00:00Z`));

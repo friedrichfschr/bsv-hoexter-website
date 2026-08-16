@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeAboutEditorialContent, updateAboutContent } from "@/features/about/server/content-service";
 import { authorizeEditorialRequest, EDITORIAL_LOGIN_RETRY_AFTER_SECONDS } from "@/shared/server/editorial-auth";
-import { readEditorialContent } from "@/lib/editorial";
+import { readEditorialContent } from "@/features/editorial/server/content-store";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 
 export const runtime = "nodejs";

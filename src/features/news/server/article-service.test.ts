@@ -3,9 +3,9 @@ import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createArticle, replaceEditorialContent, updateArticle } from "@/lib/articles";
-import { emptyEditorialContent, publishedArticleBySlug, publishedArticles, articleSchema } from "@/lib/editorial";
-import { readEditorialContent, writeEditorialContent } from "@/lib/editorial";
+import { createArticle, replaceEditorialContent, updateArticle } from "@/features/news/server/article-service";
+import { emptyEditorialContent, publishedArticleBySlug, publishedArticles, articleSchema } from "@/features/editorial/server/content-store";
+import { readEditorialContent, writeEditorialContent } from "@/features/editorial/server/content-store";
 import { storeUpload } from "@/shared/server/uploads";
 import { defaultAboutContent, updateAboutContent } from "@/features/about/server/content-service";
 

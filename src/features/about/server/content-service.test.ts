@@ -10,7 +10,7 @@ import {
   readEditorialContent,
   updateAboutContent,
 } from "@/features/about/server/content-service";
-import { replaceEditorialContent } from "@/lib/articles";
+import { replaceEditorialContent } from "@/features/news/server/article-service";
 import { storeUpload } from "@/shared/server/uploads";
 
 describe("dynamic About content", () => {

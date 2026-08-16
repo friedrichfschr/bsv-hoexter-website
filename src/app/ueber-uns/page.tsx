@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { publishedAboutContent } from "@/features/about/server/content-service";
 import type { AboutContent } from "@/features/about/domain/content-schema";
-import { readEditorialContent } from "@/lib/editorial";
+import { readEditorialContent } from "@/features/editorial/server/content-store";
 import { BoardPhotoCarousel } from "@/features/about/BoardPhotoCarousel";
 import { ExpandableArchive } from "@/features/about/ExpandableArchive";
 import { EntryPreview } from "@/features/about/EntryPreview";

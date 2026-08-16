@@ -3,7 +3,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { editorialContentSchema, readEditorialContent, writeEditorialContent } from "@/lib/editorial";
+import { editorialContentSchema, readEditorialContent, writeEditorialContent } from "@/features/editorial/server/content-store";
 import { defaultAboutContent } from "@/features/about/domain/content-schema";
 
 const content = {
