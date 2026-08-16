@@ -22,7 +22,7 @@ export interface BdkRepository {
   createSignup(input: BdkSignupInput): Promise<BdkSignupRecord>;
   setSignupStatus(id: string, status: BdkSignupStatus): Promise<BdkSignupRecord>;
   deleteSignup(id: string): Promise<void>;
-  setDocument(kind: "invitation" | "delegate-key", uploadId: string): Promise<{ event: BdkEvent; previousId: string }>;
+  setDocument(kind: "invitation" | "delegate-key", uploadId: string, expectedEventId: string): Promise<{ event: BdkEvent; previousId: string }>;
   prepareNewEvent(today?: string): Promise<{ event: BdkEvent; previousDocumentIds: string[] }>;
 }
 
@@ -141,8 +141,11 @@ export class LocalBdkRepository implements BdkRepository {
     });
   }
 
-  setDocument(kind: "invitation" | "delegate-key", uploadId: string) {
+  setDocument(kind: "invitation" | "delegate-key", uploadId: string, expectedEventId: string) {
     return this.transaction((state, now) => {
+      if (state.event.id !== expectedEventId) {
+        throw new Error("Die BDK wurde zwischenzeitlich geändert. Bitte erneut versuchen.");
+      }
       if (kind === "invitation" && uploadId && !state.event.date) {
         throw new Error("Bitte zuerst einen Termin für die BDK festlegen.");
       }

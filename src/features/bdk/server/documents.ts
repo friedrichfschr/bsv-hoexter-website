@@ -29,7 +29,7 @@ export class BdkDocumentService {
     const stored = await storeUpload(this.mediaDirectory, file);
     let previousId = "";
     try {
-      ({ previousId } = await this.repository.setDocument(parsedKind.data, stored.id));
+      ({ previousId } = await this.repository.setDocument(parsedKind.data, stored.id, state.event.id));
     } catch (error) {
       await removeStoredUpload(this.mediaDirectory, stored);
       throw error;
@@ -40,7 +40,8 @@ export class BdkDocumentService {
 
   async remove(kindInput: string) {
     const kind = bdkDocumentKindSchema.parse(kindInput);
-    const { previousId } = await this.repository.setDocument(kind, "");
+    const state = await this.repository.read();
+    const { previousId } = await this.repository.setDocument(kind, "", state.event.id);
     if (previousId) await this.removeStored(previousId);
   }
 

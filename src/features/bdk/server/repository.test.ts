@@ -66,8 +66,9 @@ describe("LocalBdkRepository", () => {
     const repo = await repository();
     await repo.updateEvent({ title: "BDK August", subtitle: "", date: "2026-08-01", time: "10:00", location: "Brakel" });
     const signupRecord = await repo.createSignup(signup("retained@example.org"));
-    await repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111");
-    await repo.setDocument("delegate-key", "22222222-2222-4222-8222-222222222222");
+    const currentEventId = (await repo.read()).event.id;
+    await repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111", currentEventId);
+    await repo.setDocument("delegate-key", "22222222-2222-4222-8222-222222222222", currentEventId);
     const next = await repo.prepareNewEvent("2026-08-02");
     expect(next.event.id).not.toBe(signupRecord.eventId);
     expect(next.event).toMatchObject({ date: "", invitationId: "", delegateKeyId: "" });
@@ -80,8 +81,18 @@ describe("LocalBdkRepository", () => {
 
   it("does not attach an invitation to a prepared event without a date", async () => {
     const repo = await repository();
-    await expect(repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111"))
+    const eventId = (await repo.read()).event.id;
+    await expect(repo.setDocument("invitation", "11111111-1111-4111-8111-111111111111", eventId))
       .rejects.toThrow("Termin");
+  });
+
+  it("does not attach an upload to an event that changed during storage", async () => {
+    const repo = await repository();
+    await repo.updateEvent({ title: "Alte BDK", subtitle: "", date: "2026-07-31", time: "", location: "" });
+    const previousEventId = (await repo.read()).event.id;
+    await repo.prepareNewEvent("2026-08-01");
+    await expect(repo.setDocument("delegate-key", "11111111-1111-4111-8111-111111111111", previousEventId))
+      .rejects.toThrow("geändert");
   });
 
   it("retains records through day 14 and removes every status after it", async () => {
