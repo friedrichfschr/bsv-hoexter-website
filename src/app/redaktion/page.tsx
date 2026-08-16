@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { EditorialDashboard } from "@/features/news/EditorialDashboard";
-import { EditorialLogin } from "@/features/news/EditorialLogin";
+import { EditorialDashboard } from "@/features/editorial/EditorialDashboard";
+import { EditorialLogin } from "@/features/editorial/EditorialLogin";
 import { EDITORIAL_SESSION_COOKIE, isEditorialSessionAuthorized } from "@/lib/editorial-auth";
 
 export const dynamic = "force-dynamic";
