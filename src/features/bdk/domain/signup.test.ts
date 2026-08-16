@@ -1,35 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { validateBdkSignup } from "@/features/bdk/domain/signup";
+import { bdkSchools } from "@/features/bdk/domain/schools";
+import { bdkSignupSchema, validateBdkSignup } from "@/features/bdk/domain/signup";
 
 const valid = {
-  name: "Erika Muster",
+  firstName: "Erika",
+  lastName: "Muster",
+  grade: "Q1",
+  gradeOther: "",
   email: "erika@example.org",
-  school: "Gymnasium Beispielstadt",
-  role: "student-council",
-  note: "Ich möchte bei der nächsten BDK mitarbeiten.",
-  consent: true,
+  school: "schulen-der-brede-brakel",
+  schoolOther: "",
+  role: "district-delegate",
+  message: "Ich möchte bei der nächsten BDK mitarbeiten.",
+  privacyAccepted: true,
 };
 
-describe("validateBdkSignup", () => {
-  it("accepts a complete BDK signup", () => {
-    expect(validateBdkSignup(valid).success).toBe(true);
+describe("BDK signup domain", () => {
+  it("contains only the 20 official school names", () => {
+    expect(bdkSchools).toHaveLength(20);
+    expect(bdkSchools.map((school) => school.label)).toContain("Schulen der Brede Brakel");
+    expect(JSON.stringify(bdkSchools)).not.toMatch(/@|Straße|PLZ/);
   });
 
-  it("requires a name, email, school, and participation role", () => {
-    for (const field of ["name", "email", "school", "role"] as const) {
-      expect(validateBdkSignup({ ...valid, [field]: "" }).success, field).toBe(false);
-    }
+  it("accepts the structured signup fields", () => {
+    expect(validateBdkSignup(valid)).toEqual(expect.objectContaining({ success: true }));
   });
 
-  it("rejects an unknown participation role", () => {
-    expect(validateBdkSignup({ ...valid, role: "guest" }).success).toBe(false);
+  it.each(["firstName", "lastName", "email", "school", "grade", "role"] as const)("requires %s", (field) => {
+    expect(validateBdkSignup({ ...valid, [field]: "" }).success).toBe(false);
   });
 
-  it("allows the optional note to be empty", () => {
-    expect(validateBdkSignup({ ...valid, note: "" }).success).toBe(true);
+  it("accepts only bounded grades and participation roles", () => {
+    expect(bdkSignupSchema.safeParse({ ...valid, grade: "11" }).success).toBe(false);
+    expect(bdkSignupSchema.safeParse({ ...valid, role: "interested" }).success).toBe(false);
   });
 
-  it("requires consent to data processing and contact", () => {
-    expect(validateBdkSignup({ ...valid, consent: false }).success).toBe(false);
+  it("requires details for other school and grade choices", () => {
+    expect(validateBdkSignup({ ...valid, school: "other", schoolOther: "" }).success).toBe(false);
+    expect(validateBdkSignup({ ...valid, school: "other", schoolOther: "Freie Schule Muster" }).success).toBe(true);
+    expect(validateBdkSignup({ ...valid, grade: "other", gradeOther: "" }).success).toBe(false);
+    expect(validateBdkSignup({ ...valid, grade: "other", gradeOther: "Ausbildung" }).success).toBe(true);
+  });
+
+  it("requires explicit privacy acknowledgement", () => {
+    expect(validateBdkSignup({ ...valid, privacyAccepted: false }).success).toBe(false);
+  });
+
+  it("normalizes optional fields", () => {
+    const parsed = bdkSignupSchema.parse({ ...valid, message: undefined, schoolOther: undefined, gradeOther: undefined });
+    expect(parsed).toMatchObject({ message: "", schoolOther: "", gradeOther: "" });
   });
 });
