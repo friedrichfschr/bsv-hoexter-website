@@ -10,6 +10,13 @@ function isTestFile(filePath) {
   return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(filePath);
 }
 
+export function countSourceLines(content) {
+  if (!content) return 0;
+  const lines = content.split(/\r?\n/);
+  if (lines.at(-1) === "") lines.pop();
+  return lines.length;
+}
+
 export function evaluateSourceSizes(files, allowlist = TEMPORARY_ALLOWLIST) {
   const errors = [];
   const warnings = [];
@@ -49,7 +56,7 @@ async function collectSourceFiles(directory, root = directory) {
     if (entry.isDirectory()) files.push(...await collectSourceFiles(absolute, root));
     else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
       const content = await readFile(absolute, "utf8");
-      files.push({ path: path.relative(root, absolute).replaceAll("\\", "/"), lines: content.split("\n").length, content });
+      files.push({ path: path.relative(root, absolute).replaceAll("\\", "/"), lines: countSourceLines(content), content });
     }
   }
   return files;

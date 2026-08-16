@@ -26,4 +26,25 @@ describe("EditorialDashboard", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Aktuelles" }));
     expect(screen.getByLabelText("Titel")).toHaveValue("Ungespeicherter Entwurf");
   });
+
+  it("resets a selected article when a new article is requested", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => response({ articles: [{
+      id: "existing",
+      slug: "existing",
+      title: "Bestehender Artikel",
+      summary: "Eine ausreichend lange Zusammenfassung.",
+      body: "Ein ausreichend langer Artikeltext für den Test.",
+      publishedAt: "2026-08-16",
+      status: "draft",
+      imageId: "",
+      imageAlt: "",
+    }] })));
+    render(<EditorialDashboard />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Bestehender Artikel/ }));
+    expect(screen.getByLabelText("Titel")).toHaveValue("Bestehender Artikel");
+    fireEvent.click(screen.getByRole("button", { name: "Neuer Artikel" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Titel")).toHaveValue(""));
+  });
 });

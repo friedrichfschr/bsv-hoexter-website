@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AboutIntroductionEditor } from "@/features/about/AboutIntroductionEditor";
 import { BdkArchiveEditor } from "@/features/about/BdkArchiveEditor";
@@ -32,5 +32,22 @@ describe("about editor component boundaries", () => {
     rerender(<BdkArchiveEditor about={defaultAboutContent} onChange={bdkChange} onRemove={noop} onUpload={async () => ""} onAddDocument={async () => undefined} onDetachDocument={noop} onError={noop} />);
     fireEvent.click(screen.getByRole("button", { name: "BDK hinzufügen" }));
     expect(bdkChange).toHaveBeenCalledWith(expect.objectContaining({ bdks: expect.arrayContaining([expect.objectContaining({ id: "" })]) }));
+  });
+
+  it("edits statutes and forwards upload failures to the editor boundary", async () => {
+    const onError = vi.fn();
+    const onChange = vi.fn();
+    render(<StatuteEditor about={defaultAboutContent} onChange={onChange} onRemove={vi.fn()} onUpload={async () => { throw new Error("Upload fehlgeschlagen"); }} onError={onError} />);
+
+    fireEvent.change(screen.getByLabelText("Titel Dokument 1"), { target: { value: "Aktualisierte Satzung" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      documents: expect.arrayContaining([expect.objectContaining({ title: "Aktualisierte Satzung" })]),
+    }));
+
+    fireEvent.change(screen.getByLabelText("PDF Dokument 1"), {
+      target: { files: [new File(["pdf"], "satzung.pdf", { type: "application/pdf" })] },
+    });
+
+    await waitFor(() => expect(onError).toHaveBeenCalledWith("Upload fehlgeschlagen"));
   });
 });

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { evaluateClientServerImports, evaluateFeatureOwnership, evaluateSourceSizes } from "./check-source-size.mjs";
+import { countSourceLines, evaluateClientServerImports, evaluateFeatureOwnership, evaluateSourceSizes } from "./check-source-size.mjs";
 
 test("rejects authored source files above 700 lines", () => {
   const result = evaluateSourceSizes([
@@ -16,6 +16,11 @@ test("reports files above 400 lines without rejecting them", () => {
 
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, ["src/example.ts (401 lines)"]);
+});
+
+test("does not count a trailing newline as an extra source line", () => {
+  assert.equal(countSourceLines("line\n".repeat(700)), 700);
+  assert.equal(countSourceLines("line\n".repeat(701)), 701);
 });
 
 test("ignores generated and test artifacts", () => {
