@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bdkEventSchema } from "@/features/bdk/domain/event";
 import { bdkSignupSchema } from "@/features/bdk/domain/signup";
+import { calendarDateSchema } from "@/shared/domain/calendar-date";
 
 export const bdkSignupStatusSchema = z.enum(["active", "cancelled"]);
 
@@ -8,7 +9,7 @@ export const bdkSignupRecordSchema = bdkSignupSchema.extend({
   id: z.uuid(),
   eventId: z.uuid(),
   eventTitle: z.string().trim().min(3).max(180),
-  eventDate: z.string(),
+  eventDate: z.union([z.literal(""), calendarDateSchema]),
   status: bdkSignupStatusSchema,
   registeredAt: z.iso.datetime(),
   cancelledAt: z.union([z.literal(""), z.iso.datetime()]).default(""),

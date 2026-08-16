@@ -63,6 +63,43 @@
   color: var(--color-ink-soft);
 }
 
+.bdk-subtitle {
+  margin: 12px 0 0;
+  font-size: 1.1rem;
+}
+
+.bdk-event-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  margin: 24px 0 0;
+}
+
+.bdk-event-details div {
+  display: grid;
+  gap: 2px;
+}
+
+.bdk-event-details dt {
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bdk-event-details dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.bdk-public-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
 .bdk-primary-action {
   min-height: 52px;
   display: inline-flex;
@@ -138,6 +175,68 @@
   border-top: var(--border-width-control) solid var(--color-border);
 }
 
+.bdk-editorial {
+  display: grid;
+  gap: 42px;
+}
+
+.bdk-document-editors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 26px;
+}
+
+.bdk-document-editors .editorial-card,
+.bdk-signup-list .editorial-card {
+  padding: 20px;
+}
+
+.bdk-signup-admin {
+  display: grid;
+  gap: 20px;
+}
+
+.bdk-signup-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+}
+
+.bdk-signup-list h3,
+.bdk-signup-list p {
+  margin: 0;
+}
+
+.bdk-signup-list article,
+.bdk-signup-list article > div:first-child {
+  display: grid;
+  gap: 10px;
+}
+
+.bdk-signup-list article > div:first-child {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.bdk-signup-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-warm);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.bdk-signup-status-cancelled {
+  color: var(--color-ink-soft);
+  text-decoration: line-through;
+}
+
+.bdk-editorial .editorial-button-danger {
+  border-color: #9f2d20;
+  color: #822318;
+}
+
 @media (max-width: 780px) {
   .bdk-next,
     .bdk-involvement {
@@ -149,7 +248,15 @@
       white-space: normal;
     }
 
+  .bdk-public-actions > * {
+      width: 100%;
+    }
+
   .bdk-involvement {
       gap: 34px;
+    }
+
+  .bdk-document-editors {
+      grid-template-columns: 1fr;
     }
 }

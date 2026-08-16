@@ -1,9 +1,9 @@
 // @vitest-environment node
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { LocalBdkRepository, DuplicateBdkSignupError } from "@/features/bdk/server/repository";
+import { BdkSignupUnavailableError, LocalBdkRepository, DuplicateBdkSignupError } from "@/features/bdk/server/repository";
 
 const signup = (email: string) => ({
   firstName: "Erika",
@@ -47,6 +47,12 @@ describe("LocalBdkRepository", () => {
     await expect(repo.createSignup({ ...signup("same@example.org"), firstName: "Andere" })).rejects.toBeInstanceOf(DuplicateBdkSignupError);
   });
 
+  it("rejects registrations for a passed event", async () => {
+    const repo = await repository();
+    await repo.updateEvent({ title: "Vergangene BDK", subtitle: "", date: "2026-07-31", time: "", location: "" });
+    await expect(repo.createSignup(signup("late@example.org"))).rejects.toBeInstanceOf(BdkSignupUnavailableError);
+  });
+
   it("cancels, reactivates, and deletes signups", async () => {
     const repo = await repository();
     const created = await repo.createSignup(signup("lifecycle@example.org"));
@@ -88,5 +94,12 @@ describe("LocalBdkRepository", () => {
     await repo.createSignup(signup("corrected@example.org"));
     await repo.updateEvent({ title: "BDK verschoben", subtitle: "", date: "2026-08-20", time: "", location: "Höxter" });
     expect((await repo.read()).signups[0]).toMatchObject({ eventTitle: "BDK verschoben", eventDate: "2026-08-20" });
+  });
+
+  it("rejects an oversized untrusted state file", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-bdk-oversized-"));
+    await mkdir(directory, { recursive: true });
+    await writeFile(path.join(directory, "bdk.json"), " ".repeat(2_000_001));
+    await expect(new LocalBdkRepository(directory).read()).rejects.toThrow("zu groß");
   });
 });

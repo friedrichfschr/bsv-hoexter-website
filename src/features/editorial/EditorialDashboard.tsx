@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { AboutEditorialPanel } from "@/features/about/AboutEditorialPanel";
+import { BdkEditorialPanel } from "@/features/bdk/BdkEditorialPanel";
 import { ArticleEditor } from "@/features/news/editor/ArticleEditor";
 import { EventModerationPanel } from "@/features/notice-board/EventModerationPanel";
 import { PosterModerationPanel } from "@/features/notice-board/PosterModerationPanel";
 
-type EditorialTab = "articles" | "events" | "posters" | "about";
+type EditorialTab = "articles" | "events" | "posters" | "bdk" | "about";
 
 const headings: Record<EditorialTab, string> = {
   articles: "Artikel verwalten",
   events: "Veranstaltungen prüfen",
   posters: "Poster platzieren",
+  bdk: "BDK verwalten",
   about: "Über uns verwalten",
 };
 
@@ -37,6 +39,7 @@ export function EditorialDashboard() {
         <button type="button" role="tab" aria-selected={activeTab === "articles"} onClick={() => setActiveTab("articles")}>Aktuelles</button>
         <button type="button" role="tab" aria-selected={activeTab === "events"} onClick={() => setActiveTab("events")}>Veranstaltungen</button>
         <button type="button" role="tab" aria-selected={activeTab === "posters"} onClick={() => setActiveTab("posters")}>Poster</button>
+        <button type="button" role="tab" aria-selected={activeTab === "bdk"} onClick={() => setActiveTab("bdk")}>BDK</button>
         <button type="button" role="tab" aria-selected={activeTab === "about"} onClick={() => setActiveTab("about")}>Über uns</button>
       </div>
       <div hidden={activeTab !== "articles"}>
@@ -44,6 +47,7 @@ export function EditorialDashboard() {
       </div>
       {activeTab === "events" && <EventModerationPanel />}
       {activeTab === "posters" ? <PosterModerationPanel /> : null}
+      {activeTab === "bdk" ? <BdkEditorialPanel /> : null}
       {activeTab === "about" ? <AboutEditorialPanel /> : null}
     </section>
   );

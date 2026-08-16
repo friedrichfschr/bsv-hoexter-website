@@ -66,28 +66,32 @@ test("phone navigation opens on demand and closes with Escape", async ({ page },
   await expect(page.getByRole("heading", { level: 1, name: "Mitmachen - BDK" })).toBeVisible();
 });
 
-test("BDK page shows the unknown-date state and dedicated signup form", async ({ page }, testInfo) => {
+test("BDK page shows the unknown-date state and structured signup form", async ({ page }, testInfo) => {
   await page.goto("/mitmachen");
   await expect(page.getByRole("heading", { level: 1, name: "Mitmachen - BDK" })).toBeVisible();
   await expect(page.getByText("Termin wird noch bekannt gegeben", { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Für die nächste BDK anmelden" }).click();
+  await page.getByRole("link", { name: "Für die BDK anmelden" }).click();
 
   await expect(page).toHaveURL(/\/mitmachen\/anmelden$/);
   await expect(page.getByRole("heading", { level: 1, name: "Zur nächsten BDK anmelden" })).toBeVisible();
-  await expect(page.getByText("Der Termin steht noch nicht fest", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Name")).toBeVisible();
+  await expect(page.getByText("Termin wird noch bekannt gegeben", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Vorname")).toBeVisible();
+  await expect(page.getByLabel("Nachname")).toBeVisible();
   await expect(page.getByLabel("E-Mail-Adresse")).toBeVisible();
   await expect(page.getByLabel("Schule")).toBeVisible();
-  await expect(page.getByLabel("Ich vertrete meine Schülervertretung")).toBeVisible();
+  await expect(page.getByLabel("Jahrgangsstufe")).toBeVisible();
+  await expect(page.getByLabel("Teilnahmerolle")).toBeVisible();
 
   if (testInfo.project.name === "chromium") {
-    await page.getByLabel("Name").fill("E2E BDK Anmeldung");
+    await page.getByLabel("Vorname").fill("E2E");
+    await page.getByLabel("Nachname").fill("Anmeldung");
     await page.getByLabel("E-Mail-Adresse").fill("bdk-e2e@example.org");
-    await page.getByLabel("Schule").fill("E2E Schule");
-    await page.getByLabel("Ich vertrete meine Schülervertretung").check();
+    await page.getByLabel("Schule").selectOption("schulen-der-brede-brakel");
+    await page.getByLabel("Jahrgangsstufe").selectOption("Q1");
+    await page.getByLabel("Teilnahmerolle").selectOption("school-sv");
     await page.getByRole("checkbox").check();
-    await page.getByRole("button", { name: "Anmeldung vormerken" }).click();
-    await expect(page.getByRole("status")).toContainText("Deine Anmeldung wurde vorgemerkt");
+    await page.getByRole("button", { name: "Verbindlich anmelden" }).click();
+    await expect(page.getByRole("status")).toContainText("Anmeldung wurde gespeichert");
   }
 });
 
@@ -149,7 +153,7 @@ test("board submission form supports poster, event, and combined entries", async
 });
 
 test("foundation has no serious or critical accessibility violations", async ({ page }) => {
-  const routes = ["/", "/schwarzes-brett", "/schwarzes-brett/einreichen", "/aktuelles", "/mitmachen", "/mitmachen/anmelden", "/ueber-uns"];
+  const routes = ["/", "/schwarzes-brett", "/schwarzes-brett/einreichen", "/aktuelles", "/mitmachen", "/mitmachen/anmelden", "/datenschutz", "/ueber-uns"];
   for (const route of routes) {
     await page.goto(route);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();

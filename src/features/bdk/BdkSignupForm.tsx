@@ -1,8 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useState } from "react";
+import { bdkGrades, bdkParticipationRoles, bdkRoleLabels } from "@/features/bdk/domain/signup";
+import { bdkSchools } from "@/features/bdk/domain/schools";
 
 export function BdkSignupForm() {
+  const [school, setSchool] = useState("");
+  const [grade, setGrade] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string }>();
 
@@ -18,12 +23,16 @@ export function BdkSignupForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: data.get("name"),
+          firstName: data.get("firstName"),
+          lastName: data.get("lastName"),
+          grade: data.get("grade"),
+          gradeOther: data.get("gradeOther") ?? "",
           email: data.get("email"),
           school: data.get("school"),
+          schoolOther: data.get("schoolOther") ?? "",
           role: data.get("role"),
-          note: data.get("note"),
-          consent: data.has("consent"),
+          message: data.get("message") ?? "",
+          privacyAccepted: data.has("privacyAccepted"),
         }),
       });
       const result = (await response.json()) as { error?: string };
@@ -32,7 +41,9 @@ export function BdkSignupForm() {
         return;
       }
       form.reset();
-      setMessage({ kind: "success", text: "Deine Anmeldung wurde vorgemerkt. Wir melden uns, sobald der Termin feststeht." });
+      setSchool("");
+      setGrade("");
+      setMessage({ kind: "success", text: "Deine Anmeldung wurde gespeichert. Die BSV kann dich zu organisatorischen Fragen kontaktieren; eine automatische Bestätigungs-E-Mail wird derzeit nicht versendet." });
     } catch {
       setMessage({ kind: "error", text: "Die Anmeldung konnte nicht gesendet werden." });
     } finally {
@@ -44,49 +55,66 @@ export function BdkSignupForm() {
     <form className="submission-form bdk-signup-form" onSubmit={submit}>
       <div className="submission-form-grid">
         <label className="form-field">
-          <span>Name</span>
-          <input name="name" type="text" minLength={2} maxLength={100} autoComplete="name" required />
+          <span>Vorname</span>
+          <input name="firstName" type="text" maxLength={80} autoComplete="given-name" required />
         </label>
         <label className="form-field">
+          <span>Nachname</span>
+          <input name="lastName" type="text" maxLength={80} autoComplete="family-name" required />
+        </label>
+        <label className="form-field form-field-wide">
           <span>E-Mail-Adresse</span>
           <input name="email" type="email" maxLength={200} autoComplete="email" required />
         </label>
-        <label className="form-field form-field-wide">
+        <label className="form-field">
           <span>Schule</span>
-          <input name="school" type="text" minLength={2} maxLength={150} autoComplete="organization" required />
+          <select name="school" value={school} onChange={(event) => setSchool(event.target.value)} required>
+            <option value="">Bitte auswählen</option>
+            {bdkSchools.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+            <option value="other">Andere Schule</option>
+          </select>
+        </label>
+        <label className="form-field">
+          <span>Jahrgangsstufe</span>
+          <select name="grade" value={grade} onChange={(event) => setGrade(event.target.value)} required>
+            <option value="">Bitte auswählen</option>
+            {bdkGrades.filter((value) => value !== "other").map((value) => <option key={value} value={value}>{value}</option>)}
+            <option value="other">Andere Jahrgangsstufe</option>
+          </select>
+        </label>
+        {school === "other" ? (
+          <label className="form-field">
+            <span>Andere Schule</span>
+            <input name="schoolOther" type="text" minLength={2} maxLength={180} autoComplete="organization" required />
+          </label>
+        ) : null}
+        {grade === "other" ? (
+          <label className="form-field">
+            <span>Andere Jahrgangsstufe</span>
+            <input name="gradeOther" type="text" maxLength={80} required />
+          </label>
+        ) : null}
+        <label className="form-field form-field-wide">
+          <span>Teilnahmerolle</span>
+          <select name="role" required>
+            <option value="">Bitte auswählen</option>
+            {bdkParticipationRoles.map((role) => <option key={role} value={role}>{bdkRoleLabels[role]}</option>)}
+          </select>
         </label>
       </div>
 
-      <fieldset className="submission-section">
-        <legend>Wie möchtest du teilnehmen?</legend>
-        <div className="bdk-role-options">
-          <label className="submission-kind-option">
-            <input name="role" type="radio" value="student-council" required />
-            <span>Ich vertrete meine Schülervertretung</span>
-          </label>
-          <label className="submission-kind-option">
-            <input name="role" type="radio" value="delegate" required />
-            <span>Ich bin Delegierte oder Delegierter</span>
-          </label>
-          <label className="submission-kind-option">
-            <input name="role" type="radio" value="interested" required />
-            <span>Ich möchte zunächst mehr erfahren</span>
-          </label>
-        </div>
-      </fieldset>
-
       <label className="form-field bdk-note-field">
         <span>Nachricht (optional)</span>
-        <textarea name="note" maxLength={1500} rows={5} />
+        <textarea name="message" maxLength={1500} rows={5} />
       </label>
 
       <label className="submission-consent">
-        <input name="consent" type="checkbox" required />
-        <span>Ich stimme zu, dass die BSV meine Angaben zur Organisation der nächsten BDK speichert und mich per E-Mail kontaktiert.</span>
+        <input name="privacyAccepted" type="checkbox" required />
+        <span>Ich habe die <Link href="/datenschutz">Datenschutzhinweise</Link> gelesen und stimme der Verarbeitung meiner Angaben zur Organisation der BDK zu.</span>
       </label>
 
       <button className="submission-submit" type="submit" disabled={submitting}>
-        {submitting ? "Wird gesendet …" : "Anmeldung vormerken"}
+        {submitting ? "Wird gesendet …" : "Verbindlich anmelden"}
       </button>
       {message ? <p className={`submission-message submission-message-${message.kind}`} role={message.kind === "error" ? "alert" : "status"}>{message.text}</p> : null}
     </form>

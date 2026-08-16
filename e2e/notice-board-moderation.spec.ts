@@ -48,6 +48,76 @@ test("admin edits and approves an event submission", async ({ page }, testInfo) 
   await api.dispose();
 });
 
+test("admin manages the complete BDK registration lifecycle", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "The protected BDK mutation workflow is covered once.");
+  const api = await playwrightRequest.newContext({ baseURL: "http://127.0.0.1:3000" });
+  const authorization = { Authorization: `Bearer ${editorialKey}` };
+
+  await page.goto("/redaktion");
+  await page.getByLabel("Redaktionsschlüssel").fill(editorialKey);
+  await page.getByRole("button", { name: "Anmelden" }).click();
+  await page.getByRole("tab", { name: "BDK" }).click();
+  const form = page.getByRole("form", { name: "BDK verwalten" });
+  await form.getByLabel("Titel", { exact: true }).fill("E2E Bezirksdelegiertenkonferenz");
+  await form.getByLabel("Untertitel (optional)").fill("Gemeinsam für gute Schulen");
+  await form.getByLabel("Datum").fill("2099-08-20");
+  await form.getByLabel("Uhrzeit").fill("14:30");
+  await form.getByLabel("Ort").fill("Kreishaus Höxter");
+  await form.getByRole("button", { name: "BDK speichern" }).click();
+  await expect(page.getByRole("status")).toHaveText("BDK gespeichert.");
+  await form.getByLabel("Einladung (PDF)").setInputFiles({ name: "einladung.pdf", mimeType: "application/pdf", buffer: tinyPdf });
+  await expect(page.getByRole("status")).toHaveText("PDF gespeichert.");
+  await form.getByLabel("Delegiertenschlüssel (PDF)").setInputFiles({ name: "delegiertenschluessel.pdf", mimeType: "application/pdf", buffer: tinyPdf });
+  await expect(page.getByRole("status")).toHaveText("PDF gespeichert.");
+
+  await page.goto("/mitmachen");
+  await expect(page.getByRole("heading", { name: "E2E Bezirksdelegiertenkonferenz" })).toBeVisible();
+  await expect(page.getByText("Gemeinsam für gute Schulen")).toBeVisible();
+  await expect(page.getByText("Donnerstag, 20. August 2099")).toBeVisible();
+  const invitation = await api.get("/api/bdk/dokumente/invitation");
+  const delegateKey = await api.get("/api/bdk/dokumente/delegate-key");
+  expect(invitation.status()).toBe(200);
+  expect(delegateKey.status()).toBe(200);
+  expect(invitation.headers()["cache-control"]).toContain("no-store");
+
+  await page.getByRole("link", { name: "Für die BDK anmelden" }).click();
+  await page.getByLabel("Vorname").fill("E2E");
+  await page.getByLabel("Nachname").fill("Teilnehmerin");
+  await page.getByLabel("E-Mail-Adresse").fill("bdk-workflow@example.org");
+  await page.getByLabel("Schule").selectOption("other");
+  await page.getByRole("textbox", { name: "Andere Schule", exact: true }).fill("E2E Schule");
+  await page.getByLabel("Jahrgangsstufe").selectOption("other");
+  await page.getByRole("textbox", { name: "Andere Jahrgangsstufe", exact: true }).fill("Ausbildung");
+  await page.getByLabel("Teilnahmerolle").selectOption("guest");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Verbindlich anmelden" }).click();
+  await expect(page.getByRole("status")).toContainText("Anmeldung wurde gespeichert");
+
+  await page.goto("/redaktion");
+  await page.getByRole("tab", { name: "BDK" }).click();
+  const signup = page.locator("article.editorial-card").filter({ hasText: "E2E Teilnehmerin" });
+  await expect(signup.getByText("Aktiv")).toBeVisible();
+  await signup.getByRole("button", { name: "Absagen" }).click();
+  await expect(signup.getByText("Abgesagt")).toBeVisible();
+  const exported = await page.request.get("/api/redaktion/bdk/export");
+  expect(exported.status()).toBe(200);
+  expect(exported.headers()["content-type"]).toContain("spreadsheetml.sheet");
+
+  const passed = await api.put("/api/redaktion/bdk", {
+    headers: authorization,
+    data: { title: "E2E Bezirksdelegiertenkonferenz", subtitle: "", date: "2000-01-01", time: "14:30", location: "Kreishaus Höxter" },
+  });
+  expect(passed.status()).toBe(200);
+  await page.reload();
+  await page.getByRole("tab", { name: "BDK" }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Neue BDK vorbereiten" }).click();
+  await expect(form.getByLabel("Datum")).toHaveValue("");
+  expect((await api.get("/api/bdk/dokumente/invitation")).status()).toBe(404);
+  expect((await api.get("/api/bdk/dokumente/delegate-key")).status()).toBe(404);
+  await api.dispose();
+});
+
 test("admin can edit About and BDK records", async ({ page, browser }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Editorial mutation is covered once.");
   await page.goto("/redaktion");

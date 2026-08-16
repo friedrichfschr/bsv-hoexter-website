@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { stat } from "node:fs/promises";
 import path from "node:path";
 import type { BdkEvent, BdkEventMutation } from "@/features/bdk/domain/event";
 import { createPreparedBdkEvent, hasBdkEventPassed } from "@/features/bdk/domain/event";
+import { berlinCalendarDate } from "@/features/bdk/domain/presentation";
 import type { BdkSignupInput } from "@/features/bdk/domain/signup";
 import { bdkSignupSchema } from "@/features/bdk/domain/signup";
 import type { BdkSignupRecord, BdkSignupStatus, BdkState } from "@/features/bdk/domain/state";
@@ -9,6 +11,7 @@ import { bdkStateSchema } from "@/features/bdk/domain/state";
 import { readValidatedJson, withSerializedMutation, writeJsonAtomically } from "@/shared/server/json-file-store";
 
 const MAX_SIGNUPS = 5000;
+const MAX_STATE_BYTES = 2_000_000;
 const STATE_FILENAME = "bdk.json";
 
 type Clock = () => Date;
@@ -24,17 +27,10 @@ export interface BdkRepository {
 }
 
 export class DuplicateBdkSignupError extends Error {}
+export class BdkSignupUnavailableError extends Error {}
 export class BdkRecordNotFoundError extends Error {}
 export class BdkEventNotPassedError extends Error {}
 
-function berlinDate(date: Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Berlin",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
 
 function addCalendarDays(date: string, days: number) {
   const [year, month, day] = date.split("-").map(Number);
@@ -64,7 +60,12 @@ export class LocalBdkRepository implements BdkRepository {
     return withSerializedMutation(this.filePath, async () => {
       const now = this.clock();
       const empty: BdkState = { event: createPreparedBdkEvent(now), signups: [] };
-      const current = removeExpiredSignups(await readValidatedJson(this.filePath, bdkStateSchema, empty), berlinDate(now));
+      try {
+        if ((await stat(this.filePath)).size > MAX_STATE_BYTES) throw new Error("Die BDK-Datendatei ist zu groß.");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+      const current = removeExpiredSignups(await readValidatedJson(this.filePath, bdkStateSchema, empty), berlinCalendarDate(now));
       const result = await operation(current, now);
       bdkStateSchema.parse(current);
       await writeJsonAtomically(this.filePath, current);
@@ -94,6 +95,9 @@ export class LocalBdkRepository implements BdkRepository {
   createSignup(input: BdkSignupInput) {
     const normalized = bdkSignupSchema.parse(input);
     return this.transaction((state, now) => {
+      if (hasBdkEventPassed(state.event, berlinCalendarDate(now))) {
+        throw new BdkSignupUnavailableError("Für diesen Termin sind keine Anmeldungen mehr möglich.");
+      }
       if (state.signups.length >= MAX_SIGNUPS) throw new Error("Die maximale Anzahl an Anmeldungen ist erreicht.");
       const existing = state.signups.find((signup) => signup.eventId === state.event.id
         && signup.status === "active"
@@ -148,7 +152,7 @@ export class LocalBdkRepository implements BdkRepository {
 
   prepareNewEvent(today?: string) {
     return this.transaction((state, now) => {
-      if (!hasBdkEventPassed(state.event, today ?? berlinDate(now))) {
+      if (!hasBdkEventPassed(state.event, today ?? berlinCalendarDate(now))) {
         throw new BdkEventNotPassedError("Eine neue BDK kann erst nach dem aktuellen Termin vorbereitet werden.");
       }
       state.event = createPreparedBdkEvent(now);

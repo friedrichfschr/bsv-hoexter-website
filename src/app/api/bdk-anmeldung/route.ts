@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { validateBdkSignup } from "@/features/bdk/domain/signup";
-import { isPreviewFormEnabled, resolvePreviewDirectory } from "@/shared/server/preview-config";
-import { appendPreviewRecord } from "@/shared/server/preview-store";
+import { BdkSignupUnavailableError, createBdkRepository, DuplicateBdkSignupError } from "@/features/bdk/server/repository";
+import { isPreviewFormEnabled } from "@/shared/server/preview-config";
 import { bufferRequestBody, RequestBodyTooLargeError } from "@/shared/server/request-body";
 import { checkPublicFormRateLimit, PUBLIC_FORM_RETRY_AFTER_SECONDS } from "@/shared/server/public-form-rate-limit";
 
@@ -23,11 +23,17 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Bitte die Angaben prüfen." }, { status: 400 });
     }
-    const record = await appendPreviewRecord(resolvePreviewDirectory(process.env), "bdk-signups", parsed.data);
+    const record = await createBdkRepository().createSignup(parsed.data);
     return NextResponse.json({ id: record.id }, { status: 202 });
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
       return NextResponse.json({ error: "Die Eingabe ist zu groß." }, { status: 413 });
+    }
+    if (error instanceof DuplicateBdkSignupError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof BdkSignupUnavailableError) {
+      return NextResponse.json({ error: error.message }, { status: 503 });
     }
     return NextResponse.json({ error: "Die Anmeldung konnte nicht verarbeitet werden." }, { status: 400 });
   }

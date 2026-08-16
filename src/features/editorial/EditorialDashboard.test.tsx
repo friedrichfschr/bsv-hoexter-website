@@ -47,4 +47,19 @@ describe("EditorialDashboard", () => {
 
     await waitFor(() => expect(screen.getByLabelText("Titel")).toHaveValue(""));
   });
+
+  it("opens BDK management from its own editorial tab", async () => {
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      if (String(input) === "/api/redaktion/bdk") return response({
+        event: { id: "11111111-1111-4111-8111-111111111111", title: "Nächste Bezirksdelegiertenkonferenz", subtitle: "", date: "", time: "", location: "", invitationId: "", delegateKeyId: "", createdAt: "2026-08-16T10:00:00.000Z", updatedAt: "2026-08-16T10:00:00.000Z" },
+        signups: [],
+        canPrepareNewEvent: false,
+      });
+      return response({ articles: [] });
+    }));
+    render(<EditorialDashboard />);
+    fireEvent.click(screen.getByRole("tab", { name: "BDK" }));
+    expect(await screen.findByRole("heading", { name: "BDK verwalten" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Nächste BDK" })).toBeInTheDocument();
+  });
 });
