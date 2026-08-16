@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { articleImageUrl, articleParagraphs, formatArticleDate } from "@/features/news/article-model";
-import type { Article } from "@/features/editorial/server/content-store";
+import type { Article } from "@/features/news/domain/article";
 
 const article: Article = {
   id: "test-article",

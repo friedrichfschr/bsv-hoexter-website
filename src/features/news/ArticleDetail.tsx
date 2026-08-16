@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Article } from "@/features/editorial/server/content-store";
+import type { Article } from "@/features/news/domain/article";
 import { articleImageUrl, articleParagraphs, formatArticleDate } from "@/features/news/article-model";
 
 export function ArticleDetail({ article }: { article: Article }) {

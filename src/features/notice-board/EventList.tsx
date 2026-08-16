@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
-import type { ModeratedEvent } from "@/features/notice-board/server/moderation";
+import type { ModeratedEvent } from "@/features/notice-board/domain/moderation";
 
 export function EventList({ events }: { events: ModeratedEvent[] }) {
   const [category, setCategory] = useState<string>("Alle");

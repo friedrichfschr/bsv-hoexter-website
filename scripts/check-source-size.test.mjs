@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { evaluateFeatureOwnership, evaluateSourceSizes } from "./check-source-size.mjs";
+import { evaluateClientServerImports, evaluateFeatureOwnership, evaluateSourceSizes } from "./check-source-size.mjs";
 
 test("rejects authored source files above 700 lines", () => {
   const result = evaluateSourceSizes([
@@ -58,4 +58,11 @@ test("keeps reusable server infrastructure in shared", () => {
     "src/lib/uploads.ts",
     "src/lib/request-body.test.ts",
   ]);
+});
+
+test("rejects server imports from client modules", () => {
+  assert.deepEqual(evaluateClientServerImports([
+    { path: "src/client.tsx", content: '"use client";\nimport type { Entry } from "@/feature/server/store";' },
+    { path: "src/server.ts", content: 'import { read } from "@/feature/server/store";' },
+  ]), ["src/client.tsx"]);
 });

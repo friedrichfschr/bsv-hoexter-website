@@ -1,36 +1,14 @@
 import path from "node:path";
 import { z } from "zod";
 import { aboutContentSchema, defaultAboutContent } from "@/features/about/domain/content-schema";
+import { articleSchema } from "@/features/news/domain/article";
+import { calendarDateSchema } from "@/shared/domain/calendar-date";
 import { readValidatedJson, withSerializedMutation, writeJsonAtomically } from "@/shared/server/json-file-store";
 
 const status = z.enum(["draft", "published"]);
 const identifier = z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/);
 
-function isValidIsoDate(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (month < 1 || month > 12 || day < 1) return false;
-  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return day <= daysInMonth[month - 1];
-}
-
-const isoDate = z.string().refine(isValidIsoDate, "Bitte ein gültiges Datum angeben.");
-
-export const articleSchema = z.object({
-  id: identifier,
-  slug: identifier,
-  title: z.string().trim().min(3).max(160),
-  summary: z.string().trim().min(10).max(320),
-  body: z.string().trim().min(20).max(30_000),
-  publishedAt: isoDate,
-  status,
-  imageId: z.string().trim().max(100).default(""),
-  imageAlt: z.string().trim().max(240).optional(),
-});
+const isoDate = calendarDateSchema;
 
 export const documentSchema = z.object({
   id: identifier,
@@ -48,7 +26,6 @@ export const editorialContentSchema = z.object({
   about: aboutContentSchema.default(defaultAboutContent),
 });
 
-export type Article = z.infer<typeof articleSchema>;
 export type EditorialContent = z.infer<typeof editorialContentSchema>;
 export const emptyEditorialContent: EditorialContent = { articles: [], documents: [], about: defaultAboutContent };
 

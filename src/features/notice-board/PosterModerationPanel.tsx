@@ -2,7 +2,7 @@
 
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { currentGermanDate, isActivePoster, roundPosterPlacement } from "@/features/notice-board/poster-placement";
-import type { ModeratedPoster, NoticeBoardContent, PosterPlacement } from "@/features/notice-board/server/moderation";
+import type { ModeratedPoster, NoticeBoardContent, PosterPlacement } from "@/features/notice-board/domain/moderation";
 
 const defaultPlacement: PosterPlacement = { boardId: "left", left: 38, top: 28, width: 24, height: 38, rotation: 0 };
 const statusLabels = { pending: "Ausstehend", approved: "Freigegeben", rejected: "Abgelehnt" } as const;

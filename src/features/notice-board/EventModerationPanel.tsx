@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { eventSubmissionCategories } from "@/features/notice-board/domain/events";
-import type { ModeratedEvent, NoticeBoardContent } from "@/features/notice-board/server/moderation";
+import type { ModeratedEvent, NoticeBoardContent } from "@/features/notice-board/domain/moderation";
 
 const statusLabels = { pending: "Ausstehend", approved: "Freigegeben", rejected: "Abgelehnt" } as const;
 

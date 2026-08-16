@@ -35,6 +35,12 @@ export function evaluateFeatureOwnership(paths) {
     .filter((filePath) => legacyFeatureModules.some((pattern) => pattern.test(filePath)));
 }
 
+export function evaluateClientServerImports(files) {
+  return files
+    .filter((file) => /^\s*["']use client["'];/.test(file.content) && /from\s+["'][^"']*\/server\//m.test(file.content))
+    .map((file) => file.path.replaceAll("\\", "/"));
+}
+
 async function collectSourceFiles(directory, root = directory) {
   const files = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -43,7 +49,7 @@ async function collectSourceFiles(directory, root = directory) {
     if (entry.isDirectory()) files.push(...await collectSourceFiles(absolute, root));
     else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
       const content = await readFile(absolute, "utf8");
-      files.push({ path: path.relative(root, absolute).replaceAll("\\", "/"), lines: content.split("\n").length });
+      files.push({ path: path.relative(root, absolute).replaceAll("\\", "/"), lines: content.split("\n").length, content });
     }
   }
   return files;
@@ -54,9 +60,11 @@ async function main() {
   const files = await collectSourceFiles(root);
   const result = evaluateSourceSizes(files);
   const ownershipErrors = evaluateFeatureOwnership(files.map((file) => file.path));
+  const clientServerErrors = evaluateClientServerImports(files);
   for (const warning of result.warnings) console.warn(`Structure warning: ${warning}`);
   for (const error of ownershipErrors) console.error(`Structure error: move feature-owned module ${error}`);
-  if (result.errors.length || ownershipErrors.length) {
+  for (const error of clientServerErrors) console.error(`Structure error: client module imports server code ${error}`);
+  if (result.errors.length || ownershipErrors.length || clientServerErrors.length) {
     for (const error of result.errors) console.error(`Structure error: ${error}`);
     process.exitCode = 1;
   }

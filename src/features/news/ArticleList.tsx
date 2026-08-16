@@ -1,4 +1,4 @@
-import type { Article } from "@/features/editorial/server/content-store";
+import type { Article } from "@/features/news/domain/article";
 import { ArticleListItem } from "@/features/news/ArticleListItem";
 
 export function ArticleList({ articles }: { articles: Article[] }) {

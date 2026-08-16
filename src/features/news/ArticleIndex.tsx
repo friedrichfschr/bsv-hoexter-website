@@ -1,4 +1,4 @@
-import type { Article } from "@/features/editorial/server/content-store";
+import type { Article } from "@/features/news/domain/article";
 import { ArticleLead } from "@/features/news/ArticleLead";
 import { ArticleList } from "@/features/news/ArticleList";
 import { NewsEmptyState } from "@/features/news/NewsEmptyState";

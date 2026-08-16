@@ -2,12 +2,11 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { z } from "zod";
 import {
-  articleSchema,
   editorialContentSchema,
   mutateEditorialContent,
   resolveEditorialDirectory,
-  type Article,
 } from "@/features/editorial/server/content-store";
+import { articleSchema, type Article } from "@/features/news/domain/article";
 import { readStoredUpload } from "@/shared/server/uploads";
 import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/features/about/server/content-service";
 
