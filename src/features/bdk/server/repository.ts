@@ -19,6 +19,7 @@ export interface BdkRepository {
   createSignup(input: BdkSignupInput): Promise<BdkSignupRecord>;
   setSignupStatus(id: string, status: BdkSignupStatus): Promise<BdkSignupRecord>;
   deleteSignup(id: string): Promise<void>;
+  setDocument(kind: "invitation" | "delegate-key", uploadId: string): Promise<{ event: BdkEvent; previousId: string }>;
   prepareNewEvent(today?: string): Promise<BdkEvent>;
 }
 
@@ -133,6 +134,15 @@ export class LocalBdkRepository implements BdkRepository {
       const index = state.signups.findIndex((candidate) => candidate.id === id);
       if (index < 0) throw new BdkRecordNotFoundError("Anmeldung nicht gefunden.");
       state.signups.splice(index, 1);
+    });
+  }
+
+  setDocument(kind: "invitation" | "delegate-key", uploadId: string) {
+    return this.transaction((state, now) => {
+      const field = kind === "invitation" ? "invitationId" : "delegateKeyId";
+      const previousId = state.event[field];
+      state.event = { ...state.event, [field]: uploadId, updatedAt: now.toISOString() };
+      return { event: structuredClone(state.event), previousId };
     });
   }
 
