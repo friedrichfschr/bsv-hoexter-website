@@ -32,9 +32,10 @@ test("admin edits and approves an event submission", async ({ page }, testInfo) 
   await page.getByRole("tab", { name: "Veranstaltungen" }).click();
   await page.getByRole("button", { name: "E2E Veranstaltung Ausstehend · 2099-11-08", exact: true }).last().click();
   await expect(page.getByRole("link", { name: "e2e@example.org" })).toBeVisible();
-  await page.getByLabel("Titel").fill("E2E Veranstaltung korrigiert");
-  await page.getByLabel("Status").selectOption("approved");
-  await page.getByRole("button", { name: "Speichern" }).click();
+  const eventForm = page.getByRole("form", { name: "Veranstaltung moderieren" });
+  await eventForm.getByLabel("Titel").fill("E2E Veranstaltung korrigiert");
+  await eventForm.getByLabel("Status").selectOption("approved");
+  await eventForm.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByRole("status")).toHaveText("Veranstaltung freigegeben.");
   await page.goto("/schwarzes-brett");
   await expect(page.getByRole("heading", { level: 3, name: "E2E Veranstaltung korrigiert" })).toBeVisible();
@@ -189,8 +190,9 @@ test("admin places, resizes, and approves a poster", async ({ page }, testInfo) 
   await page.getByLabel("Breite \(%)").fill("30");
   await page.getByLabel("Höhe \(%)").fill("45");
   await page.getByLabel("Ablaufdatum").fill("2099-11-08");
-  await page.getByLabel("Status").selectOption("approved");
-  await page.getByRole("button", { name: "Speichern" }).click();
+  const posterForm = page.getByRole("form", { name: "Poster moderieren" });
+  await posterForm.getByLabel("Status").selectOption("approved");
+  await posterForm.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByRole("status")).toHaveText("Poster platziert und freigegeben.");
   const publishedMedia = await api.get(`/api/notice-board/media/${mediaId}`);
   expect(publishedMedia.status()).toBe(200);

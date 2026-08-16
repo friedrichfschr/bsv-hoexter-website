@@ -101,7 +101,7 @@ export function EventModerationPanel() {
         )}
       </aside>
       {values ? (
-        <form className="editorial-form editorial-editor" onSubmit={save}>
+        <form aria-label="Veranstaltung moderieren" className="editorial-form editorial-editor" onSubmit={save}>
           <div className="editorial-form-heading">
             <h2>Veranstaltung prüfen und korrigieren</h2>
             <p className="editorial-muted">Änderungen werden erst mit dem Status „Freigegeben“ öffentlich sichtbar.</p>

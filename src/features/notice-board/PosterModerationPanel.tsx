@@ -158,7 +158,7 @@ export function PosterModerationPanel() {
             ))}
         </div>
         {values && selected ? (
-          <form className="editorial-form poster-placement-form" onSubmit={(event) => { event.preventDefault(); void persist(); }}>
+          <form aria-label="Poster moderieren" className="editorial-form poster-placement-form" onSubmit={(event) => { event.preventDefault(); void persist(); }}>
             <div className="editorial-form-heading"><h2>Platzierung und Freigabe</h2><p className="editorial-muted">Ziehe das Poster auf dem Brett. Am goldenen Griff kannst du es vergrößern oder verkleinern.</p></div>
             <p className="editorial-contact">Kontakt: <a href={`mailto:${selected.contactEmail}`}>{selected.contactEmail}</a>{selected.contactName ? ` · ${selected.contactName}` : ""}</p>
             <div className="editorial-form-grid">
