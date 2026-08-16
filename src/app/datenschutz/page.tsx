@@ -39,7 +39,7 @@ export default function PrivacyPage() {
 
         <section className="submission-section" aria-labelledby="retention-heading">
           <h2 id="retention-heading">Speicherdauer und Löschung</h2>
-          <p>Aktive und abgesagte Anmeldungen werden spätestens 14 Kalendertage nach dem Datum der zugehörigen BDK gelöscht. Eine frühere manuelle Löschung ist möglich.</p>
+          <p>Aktive und abgesagte Anmeldungen werden nach Ablauf von 14 Kalendertagen nach dem Datum der zugehörigen BDK beim nächsten Systemzugriff gelöscht. Eine frühere manuelle Löschung ist möglich.</p>
         </section>
 
         <section className="submission-section" aria-labelledby="rights-heading">

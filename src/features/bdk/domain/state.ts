@@ -19,7 +19,22 @@ export const bdkSignupRecordSchema = bdkSignupSchema.extend({
 
 export const bdkStateSchema = z.object({
   event: bdkEventSchema,
-  signups: z.array(bdkSignupRecordSchema).max(5000),
+  signups: z.array(bdkSignupRecordSchema).max(200),
+}).superRefine((state, context) => {
+  const ids = new Set<string>();
+  const activeEmails = new Set<string>();
+  state.signups.forEach((signup, index) => {
+    if (ids.has(signup.id)) {
+      context.addIssue({ code: "custom", message: "Doppelte Anmeldungs-ID.", path: ["signups", index, "id"] });
+    }
+    ids.add(signup.id);
+    if (signup.status !== "active") return;
+    const key = `${signup.eventId}:${signup.email}`;
+    if (activeEmails.has(key)) {
+      context.addIssue({ code: "custom", message: "Doppelte aktive Anmeldung.", path: ["signups", index, "email"] });
+    }
+    activeEmails.add(key);
+  });
 });
 
 export type BdkSignupStatus = z.infer<typeof bdkSignupStatusSchema>;

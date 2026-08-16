@@ -46,6 +46,13 @@ function json(body: unknown, status = 200) {
 describe("BdkEditorialPanel", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("shows a retryable error when the initial load fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Netzwerkfehler"));
+    render(<BdkEditorialPanel />);
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Netzwerkfehler"));
+    expect(screen.getByRole("button", { name: "Erneut laden" })).toBeVisible();
+  });
+
   it("edits the event and manages retained signups", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       if (!init?.method) return json(state);

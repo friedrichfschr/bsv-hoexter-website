@@ -62,6 +62,14 @@ describe("LocalBdkRepository", () => {
     expect((await repo.read()).signups).toEqual([]);
   });
 
+  it("rejects reactivation when a replacement active signup uses the same email", async () => {
+    const repo = await repository();
+    const original = await repo.createSignup(signup("replacement@example.org"));
+    await repo.setSignupStatus(original.id, "cancelled");
+    await repo.createSignup({ ...signup("replacement@example.org"), firstName: "Neu" });
+    await expect(repo.setSignupStatus(original.id, "active")).rejects.toBeInstanceOf(DuplicateBdkSignupError);
+  });
+
   it("prepares a fresh event while retaining previous signups", async () => {
     const repo = await repository();
     await repo.updateEvent({ title: "BDK August", subtitle: "", date: "2026-08-01", time: "10:00", location: "Brakel" });
@@ -117,6 +125,17 @@ describe("LocalBdkRepository", () => {
     await repo.createSignup(signup("corrected@example.org"));
     await repo.updateEvent({ title: "BDK verschoben", subtitle: "", date: "2026-08-20", time: "", location: "Höxter" });
     expect((await repo.read()).signups[0]).toMatchObject({ eventTitle: "BDK verschoben", eventDate: "2026-08-20" });
+  });
+
+  it("applies a late date correction before retention cleanup", async () => {
+    let now = new Date("2026-08-01T10:00:00Z");
+    const directory = await mkdtemp(path.join(tmpdir(), "bsv-bdk-correction-"));
+    const repo = new LocalBdkRepository(directory, () => now);
+    await repo.updateEvent({ title: "BDK", subtitle: "", date: "2026-08-01", time: "", location: "" });
+    const created = await repo.createSignup(signup("late-correction@example.org"));
+    now = new Date("2026-08-20T10:00:00Z");
+    await repo.updateEvent({ title: "BDK verschoben", subtitle: "", date: "2026-09-01", time: "", location: "" });
+    expect((await repo.read()).signups.map((item) => item.id)).toContain(created.id);
   });
 
   it("rejects an oversized untrusted state file", async () => {

@@ -10,7 +10,7 @@ import type { BdkSignupRecord, BdkSignupStatus, BdkState } from "@/features/bdk/
 import { bdkStateSchema } from "@/features/bdk/domain/state";
 import { readValidatedJson, withSerializedMutation, writeJsonAtomically } from "@/shared/server/json-file-store";
 
-const MAX_SIGNUPS = 5000;
+const MAX_SIGNUPS = 200;
 const MAX_STATE_BYTES = 2_000_000;
 const STATE_FILENAME = "bdk.json";
 
@@ -38,11 +38,8 @@ function addCalendarDays(date: string, days: number) {
   return result.toISOString().slice(0, 10);
 }
 
-function removeExpiredSignups(state: BdkState, today: string): BdkState {
-  return {
-    ...state,
-    signups: state.signups.filter((signup) => !signup.eventDate || today <= addCalendarDays(signup.eventDate, 14)),
-  };
+function removeExpiredSignups(state: BdkState, today: string) {
+  state.signups = state.signups.filter((signup) => !signup.eventDate || today <= addCalendarDays(signup.eventDate, 14));
 }
 
 function sameSubmission(record: BdkSignupRecord, input: BdkSignupInput) {
@@ -56,7 +53,7 @@ export class LocalBdkRepository implements BdkRepository {
     this.filePath = path.join(directory, STATE_FILENAME);
   }
 
-  private async transaction<T>(operation: (state: BdkState, now: Date) => T | Promise<T>) {
+  private async transaction<T>(operation: (state: BdkState, now: Date) => T | Promise<T>, cleanupBefore = true) {
     return withSerializedMutation(this.filePath, async () => {
       const now = this.clock();
       const empty: BdkState = { event: createPreparedBdkEvent(now), signups: [] };
@@ -65,8 +62,10 @@ export class LocalBdkRepository implements BdkRepository {
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
-      const current = removeExpiredSignups(await readValidatedJson(this.filePath, bdkStateSchema, empty), berlinCalendarDate(now));
+      const current = await readValidatedJson(this.filePath, bdkStateSchema, empty);
+      if (cleanupBefore) removeExpiredSignups(current, berlinCalendarDate(now));
       const result = await operation(current, now);
+      removeExpiredSignups(current, berlinCalendarDate(now));
       bdkStateSchema.parse(current);
       await writeJsonAtomically(this.filePath, current);
       return result;
@@ -89,7 +88,7 @@ export class LocalBdkRepository implements BdkRepository {
         ? { ...signup, eventTitle: updated.title, eventDate: updated.date }
         : signup);
       return structuredClone(updated);
-    });
+    }, false);
   }
 
   createSignup(input: BdkSignupInput) {
@@ -127,6 +126,12 @@ export class LocalBdkRepository implements BdkRepository {
     return this.transaction((state, now) => {
       const signup = state.signups.find((candidate) => candidate.id === id);
       if (!signup) throw new BdkRecordNotFoundError("Anmeldung nicht gefunden.");
+      if (status === "active" && state.signups.some((candidate) => candidate.id !== id
+        && candidate.eventId === signup.eventId
+        && candidate.status === "active"
+        && candidate.email === signup.email)) {
+        throw new DuplicateBdkSignupError("Für diese E-Mail-Adresse liegt bereits eine aktive Anmeldung vor.");
+      }
       signup.status = status;
       signup.cancelledAt = status === "cancelled" ? now.toISOString() : "";
       return structuredClone(signup);

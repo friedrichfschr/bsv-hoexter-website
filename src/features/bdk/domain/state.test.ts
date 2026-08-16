@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bdkSignupRecordSchema } from "@/features/bdk/domain/state";
+import { createPreparedBdkEvent } from "@/features/bdk/domain/event";
+import { bdkSignupRecordSchema, bdkStateSchema } from "@/features/bdk/domain/state";
 
 const record = {
   id: "22222222-2222-4222-8222-222222222222",
@@ -28,5 +29,14 @@ describe("BDK persisted state", () => {
     expect(bdkSignupRecordSchema.safeParse(record).success).toBe(true);
     expect(bdkSignupRecordSchema.safeParse({ ...record, eventDate: "" }).success).toBe(true);
     expect(bdkSignupRecordSchema.safeParse({ ...record, eventDate: "2026-02-30" }).success).toBe(false);
+  });
+
+  it("rejects duplicate record IDs and active email/event pairs from disk", () => {
+    const event = createPreparedBdkEvent(new Date("2026-08-01T10:00:00Z"), record.eventId);
+    expect(bdkStateSchema.safeParse({ event, signups: [record, { ...record }] }).success).toBe(false);
+    expect(bdkStateSchema.safeParse({
+      event,
+      signups: [record, { ...record, id: "33333333-3333-4333-8333-333333333333" }],
+    }).success).toBe(false);
   });
 });

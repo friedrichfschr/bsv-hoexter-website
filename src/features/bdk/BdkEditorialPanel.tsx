@@ -27,6 +27,11 @@ export function BdkEditorialPanel() {
     setEvent(next.event);
   }
 
+  function retryLoad() {
+    setMessage("");
+    void load().catch((error: Error) => setMessage(error.message));
+  }
+
   useEffect(() => {
     let active = true;
     void fetch("/api/redaktion/bdk")
@@ -101,6 +106,8 @@ export function BdkEditorialPanel() {
     if (deleting && !window.confirm("Diese Anmeldung endgültig löschen?")) return;
     const method = deleting ? "DELETE" : "PATCH";
     const body = deleting ? undefined : JSON.stringify({ status: signup.status === "active" ? "cancelled" : "active" });
+    setBusy(true);
+    setMessage("");
     try {
       const next = await readJson<EditorialState>(await fetch(`/api/redaktion/bdk/signups/${signup.id}`, {
         method,
@@ -108,13 +115,18 @@ export function BdkEditorialPanel() {
       }));
       setData(next);
       setEvent(next.event);
+      setMessage(deleting ? "Anmeldung gelöscht." : "Anmeldestatus gespeichert.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Anmeldung konnte nicht geändert werden.");
+    } finally {
+      setBusy(false);
     }
   }
 
   async function prepareNewEvent() {
     if (!window.confirm("Eine neue BDK ohne die bisherigen PDFs vorbereiten?")) return;
+    setBusy(true);
+    setMessage("");
     try {
       const next = await readJson<EditorialState>(await fetch("/api/redaktion/bdk", { method: "POST" }));
       setData(next);
@@ -122,10 +134,17 @@ export function BdkEditorialPanel() {
       setMessage("Neue BDK vorbereitet.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Neue BDK konnte nicht vorbereitet werden.");
+    } finally {
+      setBusy(false);
     }
   }
 
-  if (!data || !event) return <p role="status">BDK-Daten werden geladen …</p>;
+  if (!data || !event) return (
+    <div>
+      <p role="status">{message || "BDK-Daten werden geladen …"}</p>
+      {message ? <button className="editorial-button" type="button" onClick={retryLoad}>Erneut laden</button> : null}
+    </div>
+  );
 
   return (
     <section className="editorial-workspace bdk-editorial" aria-labelledby="bdk-editor-heading">
@@ -144,7 +163,7 @@ export function BdkEditorialPanel() {
         </div>
         <div className="editorial-actions">
           <button className="editorial-button" type="submit" disabled={busy}>BDK speichern</button>
-          {data.canPrepareNewEvent ? <button className="editorial-button editorial-button-secondary" type="button" onClick={prepareNewEvent}>Neue BDK vorbereiten</button> : null}
+          {data.canPrepareNewEvent ? <button className="editorial-button editorial-button-secondary" type="button" disabled={busy} onClick={prepareNewEvent}>Neue BDK vorbereiten</button> : null}
         </div>
       </form>
 
@@ -162,8 +181,8 @@ export function BdkEditorialPanel() {
               <p><a href={`mailto:${signup.email}`}>{signup.email}</a></p>
               {signup.message ? <p>{signup.message}</p> : null}
               <div className="editorial-actions">
-                <button className="editorial-button editorial-button-secondary" type="button" onClick={() => changeSignup(signup, "status")}>{signup.status === "active" ? "Absagen" : "Reaktivieren"}</button>
-                <button className="editorial-button editorial-button-danger" type="button" onClick={() => changeSignup(signup, "delete")}>Löschen</button>
+                <button className="editorial-button editorial-button-secondary" type="button" disabled={busy} onClick={() => changeSignup(signup, "status")}>{signup.status === "active" ? "Absagen" : "Reaktivieren"}</button>
+                <button className="editorial-button editorial-button-danger" type="button" disabled={busy} onClick={() => changeSignup(signup, "delete")}>Löschen</button>
               </div>
             </article>
           ))}
