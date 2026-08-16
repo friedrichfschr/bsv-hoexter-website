@@ -63,14 +63,6 @@ export async function mutateEditorialContent<T>(
   });
 }
 
-export function publishedArticles(content: Pick<EditorialContent, "articles">) {
-  return content.articles.filter((article) => article.status === "published").sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-}
-
-export function publishedArticleBySlug(content: Pick<EditorialContent, "articles">, slug: string) {
-  return publishedArticles(content).find((article) => article.slug === slug);
-}
-
 export function publishedDocuments(content: EditorialContent, kind?: EditorialContent["documents"][number]["kind"]) {
   return content.documents.filter((document) => document.status === "published" && (!kind || document.kind === kind)).sort((a, b) => b.date.localeCompare(a.date));
 }

@@ -17,9 +17,13 @@ describe("EditorialDashboard", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Artikel verwalten" })).toBeInTheDocument());
     expect(screen.getByRole("tab", { name: "Aktuelles" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Artikel anlegen" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Titel"), { target: { value: "Ungespeicherter Entwurf" } });
 
     fireEvent.click(screen.getByRole("tab", { name: "Über uns" }));
     expect(screen.getByRole("heading", { name: "Über uns verwalten" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Artikel anlegen" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Aktuelles" }));
+    expect(screen.getByLabelText("Titel")).toHaveValue("Ungespeicherter Entwurf");
   });
 });

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { publishedArticles, readEditorialContent } from "@/features/editorial/server/content-store";
+import { listPublishedArticles } from "@/features/news/server/article-service";
 import { siteUrl } from "@/shared/config/site";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const,
     priority: route === "" ? 1 : 0.5,
   }));
-  const articleEntries = publishedArticles(await readEditorialContent()).map((article) => ({
+  const articleEntries = (await listPublishedArticles()).map((article) => ({
     url: `${siteUrl}/aktuelles/${article.slug}`,
     lastModified: article.publishedAt,
     changeFrequency: "monthly" as const,

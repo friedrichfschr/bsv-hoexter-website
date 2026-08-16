@@ -29,4 +29,15 @@ describe("JSON file store", () => {
 
     await expect(readValidatedJson(filePath, schema, { count: 0 })).rejects.toThrow();
   });
+
+  it("continues processing after a queued mutation rejects", async () => {
+    const key = path.join(tmpdir(), `bsv-json-queue-${Date.now()}.json`);
+    const failed = withSerializedMutation(key, async () => {
+      throw new Error("expected failure");
+    });
+    const recovered = withSerializedMutation(key, async () => "completed");
+
+    await expect(failed).rejects.toThrow("expected failure");
+    await expect(recovered).resolves.toBe("completed");
+  });
 });

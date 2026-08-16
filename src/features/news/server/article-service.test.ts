@@ -3,8 +3,9 @@ import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createArticle, replaceEditorialContent, updateArticle } from "@/features/news/server/article-service";
-import { emptyEditorialContent, publishedArticleBySlug, publishedArticles } from "@/features/editorial/server/content-store";
+import { replaceEditorialContent } from "@/features/editorial/server/content-service";
+import { createArticle, selectPublishedArticles, updateArticle } from "@/features/news/server/article-service";
+import { emptyEditorialContent } from "@/features/editorial/server/content-store";
 import { articleSchema } from "@/features/news/domain/article";
 import { readEditorialContent, writeEditorialContent } from "@/features/editorial/server/content-store";
 import { storeUpload } from "@/shared/server/uploads";
@@ -77,9 +78,10 @@ describe("article service", () => {
       { id: "published", ...publishedInput },
     ], documents: [] };
 
-    expect(publishedArticles(content).map((article) => article.slug)).toEqual(["zweite-meldung"]);
-    expect(publishedArticleBySlug(content, "erste-meldung")).toBeUndefined();
-    expect(publishedArticleBySlug(content, "zweite-meldung")?.status).toBe("published");
+    const published = selectPublishedArticles(content);
+    expect(published.map((article) => article.slug)).toEqual(["zweite-meldung"]);
+    expect(published.find((article) => article.slug === "erste-meldung")).toBeUndefined();
+    expect(published.find((article) => article.slug === "zweite-meldung")?.status).toBe("published");
   });
 
   it("rejects impossible calendar dates", () => {

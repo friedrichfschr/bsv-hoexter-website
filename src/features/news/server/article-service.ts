@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { z } from "zod";
 import {
-  editorialContentSchema,
   mutateEditorialContent,
+  readEditorialContent,
   resolveEditorialDirectory,
 } from "@/features/editorial/server/content-store";
 import { articleSchema, type Article } from "@/features/news/domain/article";
 import { readStoredUpload } from "@/shared/server/uploads";
-import { cleanupRemovedAboutUploads, normalizeAboutEditorialContent, validateAboutContent } from "@/features/about/server/content-service";
 
 const articleMutationSchema = articleSchema.omit({ id: true }).extend({ id: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/).optional() });
 export type ArticleMutation = z.input<typeof articleMutationSchema>;
@@ -42,9 +41,21 @@ function assertUniqueSlugs(articles: Article[]) {
   }
 }
 
-async function validateArticles(directory: string, articles: Article[]) {
+export async function validateArticles(directory: string, articles: Article[]) {
   assertUniqueSlugs(articles);
   for (const article of articles) await validateImage(directory, article);
+}
+
+export function selectPublishedArticles(content: { articles: Article[] }) {
+  return content.articles.filter((article) => article.status === "published").sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
+export async function listPublishedArticles(directory = resolveEditorialDirectory()) {
+  return selectPublishedArticles(await readEditorialContent(directory));
+}
+
+export async function findPublishedArticleBySlug(slug: string, directory = resolveEditorialDirectory()) {
+  return (await listPublishedArticles(directory)).find((article) => article.slug === slug);
 }
 
 export async function createArticle(directory = resolveEditorialDirectory(), input: unknown) {
@@ -64,28 +75,6 @@ export async function updateArticle(directory = resolveEditorialDirectory(), id:
     assertUniqueSlug(content.articles, article);
     await validateImage(directory, article);
     return { content: { ...content, articles: content.articles.map((item) => item.id === id ? article : item) }, result: article };
-  });
-}
-
-export async function replaceEditorialContent(directory = resolveEditorialDirectory(), input: unknown) {
-  return mutateEditorialContent(directory, async (current) => {
-    const object = z.object({
-      articles: editorialContentSchema.shape.articles,
-      documents: editorialContentSchema.shape.documents,
-      about: z.unknown().optional(),
-    }).parse(input);
-    const parsed = editorialContentSchema.parse({ ...object, about: object.about === undefined ? current.about : object.about });
-    const content = { ...parsed, about: normalizeAboutEditorialContent(parsed.about) };
-    await validateArticles(directory, content.articles);
-    await validateAboutContent(directory, content.about);
-    return {
-      content,
-      result: content,
-      afterWrite: () => cleanupRemovedAboutUploads(directory, current.about, content.about, [
-        ...content.articles.map((article) => article.imageId),
-        ...content.documents.map((document) => document.mediaId),
-      ]),
-    };
   });
 }
 

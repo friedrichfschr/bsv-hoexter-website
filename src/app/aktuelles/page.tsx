@@ -1,9 +1,8 @@
 import { ArticleIndex } from "@/features/news/ArticleIndex";
-import { readEditorialContent, publishedArticles } from "@/features/editorial/server/content-store";
+import { listPublishedArticles } from "@/features/news/server/article-service";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const content = await readEditorialContent();
-  return <ArticleIndex articles={publishedArticles(content)} />;
+  return <ArticleIndex articles={await listPublishedArticles()} />;
 }

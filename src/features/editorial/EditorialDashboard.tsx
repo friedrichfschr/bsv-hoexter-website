@@ -39,8 +39,10 @@ export function EditorialDashboard() {
         <button type="button" role="tab" aria-selected={activeTab === "posters"} onClick={() => setActiveTab("posters")}>Poster</button>
         <button type="button" role="tab" aria-selected={activeTab === "about"} onClick={() => setActiveTab("about")}>Über uns</button>
       </div>
-      {activeTab === "articles" ? <ArticleEditor key={newArticleRequest} /> : null}
-      {activeTab === "events" ? <EventModerationPanel /> : null}
+      <div hidden={activeTab !== "articles"}>
+        <ArticleEditor key={newArticleRequest} />
+      </div>
+      {activeTab === "events" && <EventModerationPanel />}
       {activeTab === "posters" ? <PosterModerationPanel /> : null}
       {activeTab === "about" ? <AboutEditorialPanel /> : null}
     </section>
