@@ -87,7 +87,7 @@ export default async function AboutPage() {
         <p className="news-eyebrow">Unsere Gründung</p>
         <div className="about-founding-lead">
           <div className="about-founding-copy"><FoundingCounter date={about.foundingBdk.date} time={foundingTime} initialElapsed={initialFoundingElapsed!} /><p>{about.foundingBdk.summary}</p></div>
-          <aside className="about-founding-resources" aria-label="Dokumente der Gründungs-BDK"><h3>Dokumente</h3><div className="about-founding-files">{about.foundingBdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}</div></aside>
+          <aside className="about-founding-resources" aria-label="Dokumente der Gründungs-BDK"><h3>Dokumente der Gründung</h3><div className="about-founding-files">{about.foundingBdk.documentIds.map((id) => { const document = documentsById.get(id); return document ? <a key={id} href={documentHref(document)}>{document.title}</a> : null; })}</div></aside>
         </div>
         <div className="about-founding-gallery">{about.foundingBdk.photoIds.map((id) => { const media = mediaById.get(id); return media ? <figure key={id}><div><Image src={mediaHref(media.id)} fill sizes="(max-width: 780px) 100vw, 50vw" alt={media.alt} /></div>{media.caption ? <figcaption>{media.caption}</figcaption> : null}</figure> : null; })}</div>
       </section> : null}

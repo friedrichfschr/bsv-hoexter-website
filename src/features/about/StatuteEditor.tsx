@@ -17,7 +17,7 @@ export function StatuteEditor({ about, onChange, onRemove, onUpload, onError }: 
 
   return <section>
     <div className="editorial-form-heading"><h2>Satzungen</h2><button className="editorial-button editorial-button-secondary" type="button" onClick={() => onChange(appendStatute(about))}>Satzung hinzufügen</button></div>
-    <p className="editorial-form-note">Hier werden nur Satzungen verwaltet. Andere PDF-Anhänge gehören direkt zu ihrem BDK-Eintrag.</p>
+
     {about.documents.map((document, index) => document.kind === "satzung" ? <details key={index} className="about-editor-record">
       <summary><span><strong>{document.title || `Satzung ${index + 1}`}</strong><small>Satzung Nr. {document.number || "–"}</small></span></summary>
       <fieldset aria-label={`Dokument ${index + 1}`}><legend>Satzung {index + 1}</legend>
